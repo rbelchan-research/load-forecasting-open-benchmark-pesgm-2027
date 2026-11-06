@@ -1,0 +1,9 @@
+tag,ami15,ami35,ami70
+class_profile,31.1,30.8,30.8
+cold_global,28.1,24.7,25.1
+cold_global_group,28.8,27.5,26.9
+donor_attr,30.9,31.4,31.7
+donor_shape,33.4,31.5,32.6
+local_oracle,18.5,18.5,18.5
+topdown_attr,26.6,25.4,26.3
+topdown_shape,27.1,27.2,27.0

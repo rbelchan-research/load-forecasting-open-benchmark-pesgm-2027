@@ -1,0 +1,11 @@
+,nmae_pct,nmae_pct,nmae_pct,rel_change_pct,rel_change_pct,rel_change_pct
+tag,cluster,global,local,cluster,global,local
+tier,,,,,,
+clean_0.0,18.8,19.2,19.3,0.0,0.0,0.0
+mcar_0.05,19.0,19.3,19.4,0.6,0.3,0.7
+mcar_0.1,18.8,19.5,19.6,-0.3,1.7,1.5
+mcar_0.2,19.4,19.5,19.7,2.8,1.5,2.0
+outage_0.2,19.4,19.6,20.0,2.7,2.1,3.4
+frozen_0.2,19.3,19.2,19.8,2.3,0.2,2.6
+spike_0.01,19.6,19.7,22.6,4.2,2.7,17.1
+spike_0.05,26.6,27.5,37.1,41.4,43.2,92.1

@@ -1,0 +1,25 @@
+cff-version: 1.2.0
+message: "If you use this code or data, please cite it as below."
+title: "An Open Benchmark for Day-Ahead Service Transformer Load Forecasting: Grouping, Metering Coverage, and Overload Screening (code and data)"
+type: software
+authors:
+  - family-names: Belchandan
+    given-names: Rakesh Kumar
+    affiliation: "University of North Carolina at Charlotte"
+    email: rbelchan@charlotte.edu
+  - family-names: Montenegro
+    given-names: Davis
+    affiliation: "New Math Data"
+  - family-names: Cecchi
+    given-names: Valentina
+    affiliation: "University of North Carolina at Charlotte"
+repository-code: "https://github.com/rbelchan-research/load-forecasting-open-benchmark-pesgm-2027"
+license: MIT
+date-released: 2026-11-06
+keywords:
+  - load forecasting
+  - distribution transformers
+  - smart meter data
+  - benchmark
+  - SMART-DS
+  - OpenDSS

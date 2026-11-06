@@ -1,0 +1,14 @@
+Method,nMAE winter %,nMAE summer %,IQR winter %,Peak APE winter %,Peak APE summer %,Peak bias winter %,Peak hour err h,F1 at 80% winter
+"Seasonal naive (same hour, last week)",27.0,26.2,13.6,25.3,22.2,4.3,4.58,0.244
+"Persistence (same hour, yesterday)",25.7,19.8,11.0,23.0,18.0,4.0,4.47,0.45
+"Ridge regression, one model per transformer",20.4,19.6,8.1,25.6,14.6,-24.5,3.74,0.495
+"Gradient boosting, one model per transformer",19.0,18.7,9.5,19.9,15.7,-16.6,3.58,0.552
+"Gradient boosting, one model per group",18.5,19.0,8.8,21.1,15.0,-19.0,3.55,0.48
+"Gradient boosting, one model for the fleet",18.9,19.8,8.7,20.6,15.9,-18.3,3.55,0.447
+Fleet model with group features,18.8,19.3,8.7,20.8,15.7,-18.8,3.61,0.341
+"Top down, rolling four week shares",20.8,20.4,10.0,18.9,15.2,-10.2,4.0,0.442
+Top down from the group total,22.6,22.1,10.1,24.0,17.4,-19.8,4.0,0.0
+Top down from the feeder total,23.3,22.4,12.1,23.3,18.7,-19.8,3.87,0.0
+"Fleet LSTM, 168 hour encoder",19.9,16.9,8.0,21.4,14.4,-18.7,4.03,0.095
+"Fleet model, 90th percentile objective",31.8,33.6,13.2,17.0,20.9,2.4,3.56,0.479
+"Per transformer, 90th percentile objective",29.5,29.3,16.2,15.9,14.7,-0.0,3.77,0.523

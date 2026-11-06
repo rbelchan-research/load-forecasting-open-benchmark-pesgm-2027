@@ -1,0 +1,38 @@
+{
+ "rural": {
+  "region": "rural",
+  "n_xfmr": 189,
+  "a": 0.2166,
+  "b": 0.3039,
+  "c": 0.0658,
+  "flat_factor": 1.1686,
+  "fit": {
+   "mape": 3.938,
+   "rmse": 0.1537
+  },
+  "flat": {
+   "mape": 5.296,
+   "rmse": 0.4431
+  },
+  "peak_bias_fit": 0.302,
+  "peak_bias_flat": 10.324
+ },
+ "urban": {
+  "region": "urban",
+  "n_xfmr": 210,
+  "a": 0.1794,
+  "b": 0.3722,
+  "c": 0.0667,
+  "flat_factor": 1.1448,
+  "fit": {
+   "mape": 2.811,
+   "rmse": 0.2776
+  },
+  "flat": {
+   "mape": 4.223,
+   "rmse": 0.5471
+  },
+  "peak_bias_fit": 1.537,
+  "peak_bias_flat": 7.5
+ }
+}

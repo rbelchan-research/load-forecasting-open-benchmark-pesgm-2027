@@ -1,0 +1,895 @@
+<title>Transformer Benchmark Explorer</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: instrument panel. Sticky rail of sections, one measure column, chart cards on a quiet ground. */
+:root{
+  --bg:#f4f4f2; --surface:#fcfcfb; --surface-2:#eeeeeb; --line:#d9d9d4; --line-2:#c2c2bb;
+  --ink:#16171a; --ink-2:#4e5157; --ink-3:#787c84; --accent:#1c5cab;
+  --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a; --s4:#eda100; --s5:#e87ba4;
+  --good:#0ca30c; --warn:#fab219; --crit:#d03b3b;
+  --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+  --sans:"IBM Plex Sans",system-ui,-apple-system,Segoe UI,sans-serif;
+  --r:3px;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#121312; --surface:#1a1a19; --surface-2:#232322; --line:#32322f; --line-2:#45453f;
+  --ink:#f2f2ef; --ink-2:#bcbcb3; --ink-3:#8d8d85; --accent:#6da7ec;
+  --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500; --s5:#d55181;
+  --good:#0ca30c; --warn:#fab219; --crit:#d03b3b;
+  color-scheme:dark;
+}}
+:root[data-theme="dark"]{
+  --bg:#121312; --surface:#1a1a19; --surface-2:#232322; --line:#32322f; --line-2:#45453f;
+  --ink:#f2f2ef; --ink-2:#bcbcb3; --ink-3:#8d8d85; --accent:#6da7ec;
+  --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500; --s5:#d55181;
+  --good:#0ca30c; --warn:#fab219; --crit:#d03b3b;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.55;
+  -webkit-font-smoothing:antialiased;margin:0}
+.wrap{max-width:1180px;margin:0 auto;padding-inline:20px;padding-block:0}
+h1,h2,h3{text-wrap:balance;margin:0;font-weight:600;letter-spacing:-0.01em}
+h1{font-size:clamp(26px,4vw,38px);line-height:1.12;font-weight:700}
+h2{font-size:clamp(19px,2.4vw,23px);margin-bottom:6px}
+h3{font-size:15px;color:var(--ink-2);font-weight:600}
+p{margin:0 0 12px;max-width:72ch;color:var(--ink-2)}
+p strong{color:var(--ink);font-weight:600}
+a{color:var(--accent)}
+.eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--ink-3);font-weight:500}
+header.top{border-bottom:1px solid var(--line);background:var(--surface)}
+header.top .wrap{padding-block:30px 24px}
+.sub{font-size:16px;color:var(--ink-2);max-width:68ch;margin-top:10px}
+nav.rail{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--surface);
+  border-bottom:1px solid var(--line);overflow-x:auto;scrollbar-width:none}
+nav.rail::-webkit-scrollbar{display:none}
+nav.rail ul{display:flex;gap:2px;list-style:none;margin:0;padding:0 20px;min-width:max-content}
+nav.rail a{display:block;padding:11px 12px;font-size:12.5px;color:var(--ink-2);text-decoration:none;
+  border-bottom:2px solid transparent;white-space:nowrap;font-weight:500}
+nav.rail a:hover{color:var(--ink);background:var(--surface-2)}
+nav.rail a.on{color:var(--ink);border-bottom-color:var(--accent)}
+section{padding-block:40px;border-bottom:1px solid var(--line);scroll-margin-top:60px}
+section:last-of-type{border-bottom:0}
+.lede{margin-bottom:22px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:18px 18px 14px;
+  margin-bottom:16px;min-width:0}
+.card .cap{font-size:13px;color:var(--ink-3);margin:10px 0 0;max-width:none}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(330px,1fr));gap:16px}
+.tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line);
+  border:1px solid var(--line);border-radius:var(--r);overflow:hidden;margin-bottom:22px}
+.tile{background:var(--surface);padding:13px 14px}
+.tile .k{font-family:var(--mono);font-size:10.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-3)}
+.tile .v{font-family:var(--mono);font-size:25px;font-weight:600;line-height:1.2;margin-top:3px;
+  font-variant-numeric:tabular-nums}
+.tile .n{font-size:11.5px;color:var(--ink-3);line-height:1.35;margin-top:2px}
+.ctl{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:14px}
+.seg{display:inline-flex;border:1px solid var(--line-2);border-radius:var(--r);overflow:hidden}
+.seg button{appearance:none;border:0;background:var(--surface);color:var(--ink-2);font:inherit;font-size:12.5px;
+  padding:5px 11px;cursor:pointer;border-right:1px solid var(--line-2)}
+.seg button:last-child{border-right:0}
+.seg button[aria-pressed="true"]{background:var(--accent);color:#fff}
+.seg button:focus-visible,select:focus-visible,input:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+label.lbl{font-size:12.5px;color:var(--ink-3);font-family:var(--mono)}
+select,input[type=search]{font:inherit;font-size:13px;padding:4px 8px;border:1px solid var(--line-2);
+  border-radius:var(--r);background:var(--surface);color:var(--ink)}
+.tblwrap{overflow-x:auto;border:1px solid var(--line);border-radius:var(--r);background:var(--surface)}
+table{border-collapse:collapse;width:100%;font-size:12.5px;min-width:520px}
+th,td{padding:6px 10px;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap}
+th{position:sticky;top:0;background:var(--surface-2);font-weight:600;font-size:11px;color:var(--ink-2);
+  text-transform:uppercase;letter-spacing:.05em;cursor:pointer;z-index:1}
+th:first-child,td:first-child{text-align:left}
+td{font-family:var(--mono);font-variant-numeric:tabular-nums;color:var(--ink)}
+td.t{font-family:var(--sans);color:var(--ink-2)}
+tbody tr:hover{background:var(--surface-2)}
+.best{font-weight:600;color:var(--accent)}
+details{margin-top:10px}
+summary{cursor:pointer;font-size:12.5px;color:var(--ink-3);font-family:var(--mono)}
+summary:hover{color:var(--ink-2)}
+.legend{display:flex;flex-wrap:wrap;gap:12px;margin:0 0 6px;font-size:12px;color:var(--ink-2)}
+.legend span{display:inline-flex;align-items:center;gap:5px}
+.legend i{width:14px;height:3px;border-radius:2px;display:inline-block}
+.legend i.dot{width:9px;height:9px;border-radius:50%}
+svg{display:block;height:auto;overflow:visible;margin-inline:auto}
+.chart{overflow-x:auto;overflow-y:hidden;min-width:0}
+.gl{stroke:var(--line);stroke-width:1}
+.ax{stroke:var(--line-2);stroke-width:1}
+.tk{fill:var(--ink-3);font-size:10.5px;font-family:var(--mono)}
+.al{fill:var(--ink-2);font-size:11px;font-family:var(--sans)}
+.dl{fill:var(--ink);font-size:10.5px;font-family:var(--mono);font-weight:500}
+.tip{position:fixed;pointer-events:none;z-index:50;background:var(--ink);color:var(--bg);font-size:12px;
+  font-family:var(--mono);padding:6px 9px;border-radius:var(--r);opacity:0;transition:opacity .09s;max-width:260px;
+  line-height:1.45;box-shadow:0 2px 10px rgba(0,0,0,.22)}
+.tip b{color:var(--bg);font-weight:600}
+.note{background:var(--surface-2);border-left:3px solid var(--accent);padding:12px 14px;border-radius:0 var(--r) var(--r) 0;
+  margin:0 0 16px;font-size:13.5px;color:var(--ink-2);max-width:74ch}
+.note b{color:var(--ink)}
+footer{padding-block:28px 40px;color:var(--ink-3);font-size:12.5px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+@media (max-width:760px){.tiles{grid-template-columns:repeat(2,1fr)}}
+@media (max-width:560px){.wrap{padding-inline:16px}nav.rail ul{padding:0 16px}section{padding-block:30px}}
+</style>
+<div class="tip" id="tip" role="status" aria-live="polite"></div>
+
+<header class="top"><div class="wrap">
+  <p class="eyebrow">IEEE PES General Meeting 2027 &middot; submission companion</p>
+  <h1>Day-ahead forecasting on 4,134 service transformers</h1>
+  <p class="sub">Every result behind the paper, laid out so you can poke at it. Thirteen forecasting
+  strategies, seven grouping methods, three levels of meter coverage and sixteen stress scenarios, all
+  run under one protocol on the same fleet. 144 runs in total. Hover any mark for its numbers, and open
+  the table under each chart to read the figures directly.</p>
+</div></header>
+
+<nav class="rail" aria-label="Sections"><ul>
+  <li><a href="#fleet" class="on">The fleet</a></li>
+  <li><a href="#kva">Loading series</a></li>
+  <li><a href="#strategy">Strategies</a></li>
+  <li><a href="#grouping">Grouping</a></li>
+  <li><a href="#coverage">Meter coverage</a></li>
+  <li><a href="#screen">Overload screening</a></li>
+  <li><a href="#quality">Data quality</a></li>
+  <li><a href="#der">Solar and storage</a></li>
+  <li><a href="#season">Seasons and weather</a></li>
+  <li><a href="#where">Where it works</a></li>
+  <li><a href="#runs">All 144 runs</a></li>
+</ul></nav>
+
+<main class="wrap">
+
+<section id="fleet">
+  <p class="eyebrow">01</p>
+  <h2>What is in the benchmark</h2>
+  <div class="lede"><p>Four substations from the SMART-DS Greensboro models, two urban and two rural, with
+  the full secondary network intact. That means every service transformer comes with the customers
+  actually connected behind it and its nameplate rating, which is what makes a loading study possible at
+  all. Load is hourly apparent power in kVA for a full calendar year of 2018 weather.</p></div>
+  <div class="note"><b>Why a published synthetic system rather than measured utility data.</b>
+  Studying transformer loading needs the secondary network, the customer to transformer mapping and the
+  rating of every unit, and public metering releases carry meter series without any of that. A controlled
+  sweep across grouping methods, group counts and coverage tiers needs thousands of units from one
+  coherent system, and a benchmark other people are meant to extend has to sit on data they can download.
+  Inside the dataset the weather year is measured, the profiles come from building simulation rather than
+  curve fitting, and the transformer loading comes from an OpenDSS power flow on the electrical model, so
+  household behavior is the only modeled link in the chain. Section 6 of the FAQ sets out the full
+  argument and what it costs. The models and profiles are published through the Department of Energy's
+  Open Energy Data Initiative as submission 2981 under a Creative Commons Attribution 4.0 license, so
+  the whole test system is free to download, redistribute and build on with credit.</div>
+  <div class="tiles" id="tiles"></div>
+  <div class="grid2">
+    <div class="card"><h3>How many homes sit behind a transformer</h3><div class="chart"><div id="c_homes"></div></div>
+      <p class="cap">Nearly half the fleet serves a single home, which is why the error numbers further
+      down are nothing like the two to five percent a substation forecast reports.</p></div>
+    <div class="card"><h3>Annual peak as a share of nameplate</h3><div class="chart"><div id="c_util"></div></div>
+      <p class="cap">The dashed lines mark the 80 and 100 percent thresholds the screening metric is
+      written around.</p></div>
+  </div>
+</section>
+
+<section id="kva">
+  <p class="eyebrow">02</p>
+  <h2>Turning metered kilowatts into transformer loading</h2>
+  <div class="lede"><p>A loading screen compares apparent power against a rating in kVA, but a meter
+  reports real power in kW. We ran a full year of fifteen minute power flow in OpenDSS on 1,154
+  transformers to find out what the usual flat power factor costs, and the answer turned out to matter
+  more than any modeling choice in the rest of the study.</p></div>
+  <div class="note"><b>The headline.</b> A flat ratio flags 23 transformers as overloaded on the rural
+  substation where the power flow finds 3. Summed customer kilowatts finds none of them. A three
+  parameter calibration gets 3 of 3 and 5 of 5 exactly right.</div>
+  <div class="grid2">
+    <div class="card"><h3>Transformers flagged above nameplate</h3><div class="chart"><div id="c_kva"></div></div>
+      <p class="cap">Each construction against the count a year of power flow actually produces.</p></div>
+    <div class="card"><h3>Measured kVA per kW, by loading level</h3><div class="chart"><div id="c_ratio"></div></div>
+      <p class="cap">The ratio is not a constant. It runs near 1.25 when the transformer is lightly
+      loaded and falls toward 1.09 at the hours that decide the screen.</p></div>
+  </div>
+  <details><summary>Show the validation table</summary><div id="t_kva"></div></details>
+</section>
+
+<section id="strategy">
+  <p class="eyebrow">03</p>
+  <h2>Does the choice of model family matter</h2>
+  <div class="lede"><p>Thirteen strategies on the same 500 transformers, sorted by how much information
+  each one shares across the fleet rather than by which algorithm family it belongs to. Switch folds to
+  see how little of the ranking survives the change of season.</p></div>
+  <div class="ctl">
+    <span class="seg" role="group" aria-label="Season"><button data-fold="winter" aria-pressed="true">December</button><button data-fold="summer" aria-pressed="false">July</button><button data-fold="both" aria-pressed="false">Both</button></span>
+    <span class="seg" role="group" aria-label="Measure"><button data-m="nmae_med" aria-pressed="true">Average error</button><button data-m="peak_ape_med" aria-pressed="false">Peak error</button><button data-m="peak_bias_med" aria-pressed="false">Peak bias</button><button data-m="ovl80_f1" aria-pressed="false">Screen F1</button></span>
+  </div>
+  <div class="card"><div class="chart"><div id="c_strategy"></div></div>
+    <p class="cap" id="cap_strategy"></p></div>
+  <div class="tblwrap"><div id="t_strategy"></div></div>
+</section>
+
+<section id="grouping">
+  <p class="eyebrow">04</p>
+  <h2>Does the choice of grouping method matter</h2>
+  <div class="lede"><p>Seventeen settings with everything else held fixed. Five methods cluster the
+  metered history, and two need no meter data at all. The whole spread is 0.4 percentage points, which
+  is less than the difference between two random samples of the fleet.</p></div>
+  <div class="card"><div class="chart"><div id="c_group"></div></div>
+    <p class="cap">One dot per setting, with the group count swept from 2 to 32 where the method allows
+    it. The two methods that need no meter data land among the ones that read a full year of it.</p></div>
+  <details><summary>Show the grouping table</summary><div id="t_group"></div></details>
+</section>
+
+<section id="coverage">
+  <p class="eyebrow">05</p>
+  <h2>How much of the fleet needs a meter</h2>
+  <div class="lede"><p>Scored on one fixed set of transformers that stay unmetered in every tier, so the
+  three tiers can be read against each other directly. The flat line at the bottom is the same
+  transformer forecast from its own history, which is the ceiling nothing else reaches.</p></div>
+  <div class="card"><div class="chart"><div id="c_cov"></div></div>
+    <p class="cap">Going from 15 to 35 percent coverage helps. Going from 35 to 70 does not.</p></div>
+  <details><summary>Show the coverage table</summary><div id="t_cov"></div></details>
+</section>
+
+<section id="screen">
+  <p class="eyebrow">06</p>
+  <h2>Accurate forecasts do not catch overloads</h2>
+  <div class="lede"><p>This is the result with the most practical weight. Every model trained to minimize
+  average error undershoots the daily peak, so when the forecast is used to decide which transformer to
+  inspect it almost never raises a flag, no matter how much electric vehicle load is added.</p></div>
+  <div class="grid2">
+    <div class="card"><h3>Screening quality as electric vehicles arrive</h3><div class="chart"><div id="c_ev"></div></div>
+      <p class="cap">The share of transformers past nameplate climbs from 4.3 to 30.6 percent across this
+      range. The accurate models stay flat at zero.</p></div>
+    <div class="card"><h3>What the screen costs in accuracy</h3><div class="chart"><div id="c_q"></div></div>
+      <p class="cap">Each point is one training quantile, from the median at the left to the 98th
+      percentile at the right.</p></div>
+  </div>
+  <div class="card"><h3>Peak bias by strategy, December</h3><div class="chart"><div id="c_bias"></div></div>
+    <p class="cap">Negative means the model forecast a lower peak than actually occurred. Only the
+    quantile models sit near zero.</p></div>
+  <details><summary>Show the growth and quantile tables</summary><div id="t_ev"></div><div style="height:12px"></div><div id="t_q"></div></details>
+</section>
+
+<section id="quality">
+  <p class="eyebrow">07</p>
+  <h2>What damaged meter history costs</h2>
+  <div class="lede"><p>Four kinds of fault injected into the history the models learn from, repaired the
+  way a utility would by filling from the same hour one week earlier, then scored against the clean
+  series. Gaps turn out to be close to harmless. Undetected spikes are not.</p></div>
+  <div class="card"><div class="chart"><div id="c_dirty"></div></div>
+    <p class="cap">Change in error against the same strategy on clean history. This is the one place
+    where grouping clearly earns its keep.</p></div>
+  <details><summary>Show the data quality table</summary><div id="t_dirty"></div></details>
+</section>
+
+<section id="der">
+  <p class="eyebrow">08</p>
+  <h2>Rooftop solar and home batteries</h2>
+  <div class="lede"><p>Both were added as overlays on top of the measured fleet, with every parameter
+  stated so the scenario can be replaced. They pull in opposite directions, and the battery result is
+  the one worth arguing about at a conference.</p></div>
+  <div class="grid2">
+    <div class="card"><h3>Rooftop solar</h3><div class="chart"><div id="c_pv"></div></div>
+      <p class="cap">Solar makes the hourly series harder to forecast while making the loading problem
+      easier, since generation shaves the afternoon.</p></div>
+    <div class="card"><h3>Home batteries on a fixed daily schedule</h3><div class="chart"><div id="c_bess"></div></div>
+      <p class="cap">Batteries make the series easier to forecast and the loading problem worse, because
+      every battery on the street charges in the same overnight window.</p></div>
+  </div>
+</section>
+
+<section id="season">
+  <p class="eyebrow">09</p>
+  <h2>Seasons, hours and weather</h2>
+  <div class="lede"><p>This fleet peaks in both seasons, which is part of why it makes a good test
+  system. Seventy one percent of transformers reach their annual peak between May and September and
+  twenty seven percent reach it between November and March.</p></div>
+  <div class="grid2">
+    <div class="card"><h3>Average weekday shape by season</h3><div class="chart"><div id="c_shape"></div></div>
+      <p class="cap">Each series is the fleet mean load for that season, divided by the annual mean.</p></div>
+    <div class="card"><h3>Fleet load against outdoor temperature</h3><div class="chart"><div id="c_temp"></div></div>
+      <p class="cap">Load bottoms out in the mild band and rises in both directions, by about a quarter
+      on the cold side and by double on the hot side.</p></div>
+  </div>
+  <div class="card"><h3>Month in which each transformer reaches its annual peak</h3><div class="chart"><div id="c_pm"></div></div>
+    <p class="cap">Two clear modes, one in January and one across June and July.</p></div>
+</section>
+
+<section id="where">
+  <p class="eyebrow">10</p>
+  <h2>Where the method works and where it does not</h2>
+  <div class="lede"><p>A fleet median is of little use to someone deciding whether to trust the result on
+  one particular feeder, so the fleet is split along properties a planner can check before running
+  anything. Error falls as the load flattens and as more customers sit behind the unit.</p></div>
+  <div class="ctl">
+    <span class="seg" role="group" aria-label="Split"><button data-sp="homes" aria-pressed="true">Homes served</button><button data-sp="volatility" aria-pressed="false">Day to day swing</button><button data-sp="nameplate" aria-pressed="false">Nameplate rating</button><button data-sp="res_share" aria-pressed="false">Customer mix</button></span>
+    <span class="seg" role="group" aria-label="Season"><button data-wf="winter" aria-pressed="true">December</button><button data-wf="summer" aria-pressed="false">July</button></span>
+  </div>
+  <div class="card"><div class="chart"><div id="c_strat"></div></div>
+    <p class="cap" id="cap_strat"></p></div>
+</section>
+
+<section id="runs">
+  <p class="eyebrow">11</p>
+  <h2>Every run in the benchmark</h2>
+  <div class="lede"><p>All 144 rows, exactly as the experiment wrote them. Filter by experiment, search
+  for a strategy, or click a column heading to sort.</p></div>
+  <div class="ctl">
+    <label class="lbl" for="f_exp">experiment</label>
+    <select id="f_exp"><option value="">all</option></select>
+    <label class="lbl" for="f_q">search</label>
+    <input type="search" id="f_q" placeholder="strategy, tier, grouping" size="22">
+    <span class="lbl" id="f_n"></span>
+  </div>
+  <div class="tblwrap" style="max-height:62vh;overflow-y:auto"><div id="t_all"></div></div>
+</section>
+
+<footer class="wrap">
+  <p style="max-width:74ch">Companion to <i>An Open Benchmark for Day-Ahead Service Transformer Load
+  Forecasting: Grouping, Metering Coverage, and Overload Screening</i>, by Rakesh Kumar Belchandan (UNC Charlotte), Davis Montenegro (New Math Data) and Valentina Cecchi (UNC Charlotte). Built on the SMART-DS Greensboro models
+  published through the Open Energy Data Initiative, with transformer apparent power calibrated against
+  OpenDSS time series power flow. Error is normalized by each transformer's own mean load and reported
+  as the fleet median.</p>
+</footer>
+</main>
+
+<script>
+const D = {"runs":[{"experiment":"main","fold":"winter","tag":"seasonal_naive","strategy":"seasonal_naive","grouping":"-","k":8,"tier":"hourly_full","n_xfmr":500,"nmae_med":0.26977118849754333,"nmae_iqr":0.13573217764496803,"nrmse_med":0.40642833709716797,"peak_ape_med":0.2529069700864174,"peak_bias_med":0.042737731939151646,"peak_hour_err_med":4.580645161290323,"fleet_nmae":0.23520474135875702,"ovl80_prec":0.23809523809523808,"ovl80_rec":0.25,"ovl80_f1":0.24390243902439024,"ovl100_prec":0.125,"ovl100_rec":0.16666666666666666,"ovl100_f1":0.14285714285714285,"ovl80_n":60,"ovl100_n":6,"secs":18.7},{"experiment":"main","fold":"winter","tag":"persistence","strategy":"persistence","grouping":"-","k":8,"tier":"hourly_full","n_xfmr":500,"nmae_med":0.2574748992919922,"nmae_iqr":0.11024954915046692,"nrmse_med":0.38574105501174927,"peak_ape_med":0.23038261562525747,"peak_bias_med":0.04011796809537636,"peak_hour_err_med":4.46774193548387,"fleet_nmae":0.23457035422325134,"ovl80_prec":0.45,"ovl80_rec":0.45,"ovl80_f1":0.45,"ovl100_prec":0.3333333333333333,"ovl100_rec":0.3333333333333333,"ovl100_f1":0.3333333333333333,"ovl80_n":60,"ovl100_n":6,"secs":18.5},{"experiment":"main","fold":"winter","tag":"ridge_local","strategy":"ridge_local","grouping":"-","k":8,"tier":"hourly_full","n_xfmr":500,"nmae_med":0.20426321029663086,"nmae_iqr":0.0812251903116703,"nrmse_med":0.2973865568637848,"peak_ape_med":0.25563062610284937,"peak_bias_med":-0.24492174165789038,"peak_hour_err_med":3.7419354838709675,"fleet_nmae":0.17925603687763214,"ovl80_prec":0.6486486486486487,"ovl80_rec":0.4,"ovl80_f1":0.4948453608247423,"ovl100_prec":0.0,"ovl100_rec":0.0,"ovl100_f1":0.0,"ovl80_n":60,"ovl100_n":6,"secs":21.5},{"experiment":"main","fold":"winter","tag":"cluster","strategy":"cluster","grouping":"shape_kmeans(k=8)","k":8,"tier":"hourly_full","n_xfmr":500,"nmae_med":0.18519651889801025,"nmae_iqr":0.08755800127983093,"nrmse_med":0.28001779317855835,"peak_ape_med":0.21112369419819105,"peak_bias_med":-0.1904334306807047,"peak_hour_err_med":3.5483870967741935,"fleet_nmae":0.15821538865566254,"ovl80_prec":0.6,"ovl80_rec":0.4,"ovl80_f1":0.48,"ovl100_prec":0.6666666666666666,"ovl100_rec":0.3333333333333333,"ovl100_f1":0.4444444444444444,"ovl80_n":60,"ovl100_n":6,"secs":71.7},{"experiment":"main","fold":"winter","tag":"global","strategy":"global","grouping":"-","k":8,"tier":"hourly_full","n_xfmr":500,"nmae_med":0.18919259354020435,"nmae_iqr":0.08746684609822544,"nrmse_med":0.28275168150754393,"peak_ape_med":0.20575275828581507,"peak_bias_med":-0.18299760503932375,"peak_hour_err_med":3.5483870967741935,"fleet_nmae":0.16434798328135503,"ovl80_prec":0.76,"ovl80_rec":0.31666666666666665,"ovl80_f1":0.4470588235294118,"ovl100_prec":0.4,"ovl100_rec":0.3333333333333333,"ovl100_f1":0.36363636363636365,"ovl80_n":60,"ovl100_n":6,"secs":65.0},{"experiment":"main","fold":"winter","tag":"global_cluster","strategy":"global_cluster","grouping":"shape_kmeans(k=8)","k":8,"tier":"hourly_full","n_xfmr":500,"nmae_med":0.1883159461266791,"nmae_iqr":0.08706337510499265,"nrmse_med":0.27764191050822673,"peak_ape_med":0.2083170705144769,"peak_bias_med":-0.1875862054901724,"peak_hour_err_med":3.6129032258064515,"fleet_nmae":0.1634279017512681,"ovl80_prec":0.6363636363636364,"ovl80_rec":0.23333333333333334,"ovl80_f1":0.34146341463414637,"ovl100_prec":0.5,"ovl100_rec":0.3333333333333333,"ovl100_f1":0.4,"ovl80_n":60,"ovl100_n":6,"secs":66.7},{"experiment":"main","fold":"winter","tag":"local","strategy":"local","grouping":"-","k":8,"tier":"hourly_full","n_xfmr":500,"nmae_med":0.19028723239898682,"nmae_iqr":0.0950845368206501,"nrmse_med":0.278899222612381,"peak_ape_med":0.1987023038907923,"peak_bias_med":-0.16589107396336453,"peak_hour_err_med":3.5806451612903225,"fleet_nmae":0.15725785493850708,"ovl80_prec":0.8888888888888888,"ovl80_rec":0.4,"ovl80_f1":0.5517241379310345,"ovl100_prec":0.6,"ovl100_rec":0.5,"ovl100_f1":0.5454545454545454,"ovl80_n":60,"ovl100_n":6,"secs":173.3},{"experiment":"main","fold":"winter","tag":"topdown_rolling","strategy":"topdown_rolling","grouping":"-","k":8,"tier":"hourly_full","n_xfmr":500,"nmae_med":0.20762449502944946,"nmae_iqr":0.10034003481268883,"nrmse_med":0.29932913184165955,"peak_ape_med":0.1885079513228829,"peak_bias_med":-0.102102555514824,"peak_hour_err_med":4.0,"fleet_nmae":0.17720945179462433,"ovl80_prec":0.6,"ovl80_rec":0.35,"ovl80_f1":0.4421052631578947,"ovl100_prec":0.0,"ovl100_rec":0.0,"ovl100_f1":0.0,"ovl80_n":60,"ovl100_n":6,"secs":22.8},{"experiment":"main","fold":"winter","tag":"topdown_cluster","strategy":"topdown_cluster","grouping":"shape_kmeans(k=8)","k":8,"tier":"hourly_full","n_xfmr":500,"nmae_med":0.22589769959449768,"nmae_iqr":0.10111025348305702,"nrmse_med":0.3227655589580536,"peak_ape_med":0.2398000187691181,"peak_bias_med":-0.19843368046548998,"peak_hour_err_med":4.0,"fleet_nmae":0.2123735398054123,"ovl80_prec":0.0,"ovl80_rec":0.0,"ovl80_f1":0.0,"ovl100_prec":0.0,"ovl100_rec":0.0,"ovl100_f1":0.0,"ovl80_n":60,"ovl100_n":6,"secs":22.3},{"experiment":"main","fold":"winter","tag":"topdown_feeder","strategy":"topdown_feeder","grouping":"-","k":8,"tier":"hourly_full","n_xfmr":500,"nmae_med":0.23296940326690674,"nmae_iqr":0.12131169810891151,"nrmse_med":0.3283328413963318,"peak_ape_med":0.23291107771107028,"peak_bias_med":-0.1980150432115601,"peak_hour_err_med":3.870967741935484,"fleet_nmae":0.22674976289272308,"ovl80_prec":0.0,"ovl80_rec":0.0,"ovl80_f1":0.0,"ovl100_prec":0.0,"ovl100_rec":0.0,"ovl100_f1":0.0,"ovl80_n":60,"ovl100_n":6,"secs":26.8},{"experiment":"main","fold":"winter","tag":"global_cluster_q90","strategy":"global_cluster_q90","grouping":"-","k":8,"tier":"hourly_full","n_xfmr":500,"nmae_med":0.31836834097573485,"nmae_iqr":0.1319856800904854,"nrmse_med":0.38734551292456665,"peak_ape_med":0.16979423090183204,"peak_bias_med":0.024393111651164902,"peak_hour_err_med":3.564516129032258,"fleet_nmae":0.26544305470537155,"ovl80_prec":0.47540983606557374,"ovl80_rec":0.48333333333333334,"ovl80_f1":0.4793388429752066,"ovl100_prec":0.38461538461538464,"ovl100_rec":0.8333333333333334,"ovl100_f1":0.5263157894736842,"ovl80_n":60,"ovl100_n":6,"secs":165.5},{"experiment":"main","fold":"winter","tag":"local_q90","strategy":"local_q90","grouping":"-","k":8,"tier":"hourly_full","n_xfmr":500,"nmae_med":0.29514461755752563,"nmae_iqr":0.16195693984627724,"nrmse_med":0.37902772426605225,"peak_ape_med":0.15878646452009917,"peak_bias_med":-5.333130848744223e-05,"peak_hour_err_med":3.774193548387097,"fleet_nmae":0.24809430539608002,"ovl80_prec":0.5957446808510638,"ovl80_rec":0.4666666666666667,"ovl80_f1":0.5233644859813084,"ovl100_prec":0.4444444444444444,"ovl100_rec":0.6666666666666666,"ovl100_f1":0.5333333333333333,"ovl80_n":60,"ovl100_n":6,"secs":172.2},{"experiment":"main","fold":"winter","tag":"lstm_global","strategy":"lstm_global","grouping":"-","k":8,"tier":"hourly_full","n_xfmr":500,"nmae_med":0.1987897753715515,"nmae_iqr":0.08045637980103493,"nrmse_med":0.29020440578460693,"peak_ape_med":0.21411938634851285,"peak_bias_med":-0.18688072568376457,"peak_hour_err_med":4.032258064516129,"fleet_nmae":0.19067628681659698,"ovl80_prec":1.0,"ovl80_rec":0.05,"ovl80_f1":0.09523809523809523,"ovl100_prec":0.0,"ovl100_rec":0.0,"ovl100_f1":0.0,"ovl80_n":60,"ovl100_n":6,"secs":532.2},{"experiment":"main","fold":"summer","tag":"seasonal_naive","strategy":"seasonal_naive","grouping":"-","k":8,"tier":"hourly_full","n_xfmr":500,"nmae_med":0.2618657350540161,"nmae_iqr":0.08088669925928116,"nrmse_med":0.363415002822876,"peak_ape_med":0.22215961930041592,"peak_bias_med":0.03613175990645803,"peak_hour_err_med":2.9516129032258065,"fleet_nmae":0.23017820715904236,"ovl80_prec":0.11224489795918367,"ovl80_rec":0.1301775147928994,"ovl80_f1":0.12054794520547946,"ovl100_prec":0.0,"ovl100_rec":0.0,"ovl100_f1":0.0,"ovl80_n":169,"ovl100_n":5,"secs":20.0},{"experiment":"main","fold":"summer","tag":"persistence","strategy":"persistence","grouping":"-","k":8,"tier":"hourly_full","n_xfmr":500,"nmae_med":0.19814994931221008,"nmae_iqr":0.08519149199128151,"nrmse_med":0.2977151870727539,"peak_ape_med":0.180218871442541,"peak_bias_med":0.03457103530414432,"peak_hour_err_med":3.0,"fleet_nmae":0.18611358106136322,"ovl80_prec":0.09714285714285714,"ovl80_rec":0.10059171597633136,"ovl80_f1":0.09883720930232558,"ovl100_prec":0.0,"ovl100_rec":0.0,"ovl100_f1":0.0,"ovl80_n":169,"ovl100_n":5,"secs":19.5},{"experiment":"main","fold":"summer","tag":"ridge_local","strategy":"ridge_local","grouping":"-","k":8,"tier":"hourly_full","n_xfmr":500,"nmae_med":0.19630208611488342,"nmae_iqr":0.07632000371813774,"nrmse_med":0.26069462299346924,"peak_ape_med":0.1462039638032776,"peak_bias_med":-0.01107923809280281,"peak_hour_err_med":2.032258064516129,"fleet_nmae":0.17957685887813568,"ovl80_prec":0.2857142857142857,"ovl80_rec":0.011834319526627219,"ovl80_f1":0.022727272727272728,"ovl100_prec":0.0,"ovl100_rec":0.0,"ovl100_f1":0.0,"ovl80_n":169,"ovl100_n":5,"secs":21.6},{"experiment":"main","fold":"summer","tag":"cluster","strategy":"cluster","grouping":"shape_kmeans(k=8)","k":8,"tier":"hourly_full","n_xfmr":500,"nmae_med":0.1900792121887207,"nmae_iqr":0.06126220524311066,"nrmse_med":0.2551133632659912,"peak_ape_med":0.14970615450968786,"peak_bias_med":-0.046542364347260445,"peak_hour_err_med":2.0161290322580645,"fleet_nmae":0.16960549354553223,"ovl80_prec":0.0,"ovl80_rec":0.0,"ovl80_f1":0.0,"ovl100_prec":0.0,"ovl100_rec":0.0,"ovl100_f1":0.0,"ovl80_n":169,"ovl100_n":5,"secs":39.8},{"experiment":"main","fold":"summer","tag":"global","strategy":"global","grouping":"-","k":8,"tier":"hourly_full","n_xfmr":500,"nmae_med":0.1979451090286901,"nmae_iqr":0.05717215385858504,"nrmse_med":0.26243741466747306,"peak_ape_med":0.158632543428511,"peak_bias_med":9.708604475426205e-05,"peak_hour_err_med":2.032258064516129,"fleet_nmae":0.18192854923349194,"ovl80_prec":0.0,"ovl80_rec":0.0,"ovl80_f1":0.0,"ovl100_prec":0.0,"ovl100_rec":0.0,"ovl100_f1":0.0,"ovl80_n":169,"ovl100_n":5,"secs":38.3},{"experiment":"main","fold":"summer","tag":"global_cluster","strategy":"global_cluster","grouping":"shape_kmeans(k=8)","k":8,"tier":"hourly_full","n_xfmr":500,"nmae_med":0.1927763644496169,"nmae_iqr":0.061231281902811574,"nrmse_med":0.25823464899601495,"peak_ape_med":0.1570446528274188,"peak_bias_med":-0.0012073057847344277,"peak_hour_err_med":2.032258064516129,"fleet_nmae":0.17635852267469984,"ovl80_prec":0.0,"ovl80_rec":0.0,"ovl80_f1":0.0,"ovl100_prec":0.0,"ovl100_rec":0.0,"ovl100_f1":0.0,"ovl80_n":169,"ovl100_n":5,"secs":43.7},{"experiment":"main","fold":"summer","tag":"local","strategy":"local","grouping":"-","k":8,"tier":"hourly_full","n_xfmr":500,"nmae_med":0.18735814094543457,"nmae_iqr":0.08291519433259964,"nrmse_med":0.2542668581008911,"peak_ape_med":0.15655292175529945,"peak_bias_med":-0.07259931389689295,"peak_hour_err_med":2.1774193548387095,"fleet_nmae":0.16724298894405365,"ovl80_prec":0.0,"ovl80_rec":0.0,"ovl80_f1":0.0,"ovl100_prec":0.0,"ovl100_rec":0.0,"ovl100_f1":0.0,"ovl80_n":169,"ovl100_n":5,"secs":129.6},{"experiment":"main","fold":"summer","tag":"topdown_rolling","strategy":"topdown_rolling","grouping":"-","k":8,"tier":"hourly_full","n_xfmr":500,"nmae_med":0.20428554713726044,"nmae_iqr":0.0765850730240345,"nrmse_med":0.2716871500015259,"peak_ape_med":0.1518758469216165,"peak_bias_med":-0.008105832384899259,"peak_hour_err_med":2.6451612903225805,"fleet_nmae":0.1833304464817047,"ovl80_prec":0.07142857142857142,"ovl80_rec":0.005917159763313609,"ovl80_f1":0.01092896174863388,"ovl100_prec":0.0,"ovl100_rec":0.0,"ovl100_f1":0.0,"ovl80_n":169,"ovl100_n":5,"secs":20.7},{"experiment":"main","fold":"summer","tag":"topdown_cluster","strategy":"topdown_cluster","grouping":"shape_kmeans(k=8)","k":8,"tier":"hourly_full","n_xfmr":500,"nmae_med":0.22069601714611053,"nmae_iqr":0.14035139605402946,"nrmse_med":0.2944687008857727,"peak_ape_med":0.1743655873973283,"peak_bias_med":-0.053188553179479056,"peak_hour_err_med":2.693548387096774,"fleet_nmae":0.2163037806749344,"ovl80_prec":0.0,"ovl80_rec":0.0,"ovl80_f1":0.0,"ovl100_prec":0.0,"ovl100_rec":0.0,"ovl100_f1":0.0,"ovl80_n":169,"ovl100_n":5,"secs":20.8},{"experiment":"main","fold":"summer","tag":"topdown_feeder","strategy":"topdown_feeder","grouping":"-","k":8,"tier":"hourly_full","n_xfmr":500,"nmae_med":0.22440817952156067,"nmae_iqr":0.14113334193825722,"nrmse_med":0.3057366609573364,"peak_ape_med":0.18673720708137542,"peak_bias_med":-0.050880992244328224,"peak_hour_err_med":2.4516129032258065,"fleet_nmae":0.2311909794807434,"ovl80_prec":0.0,"ovl80_rec":0.0,"ovl80_f1":0.0,"ovl100_prec":0.0,"ovl100_rec":0.0,"ovl100_f1":0.0,"ovl80_n":169,"ovl100_n":5,"secs":21.8},{"experiment":"main","fold":"summer","tag":"global_cluster_q90","strategy":"global_cluster_q90","grouping":"-","k":8,"tier":"hourly_full","n_xfmr":500,"nmae_med":0.3362690195619834,"nmae_iqr":0.10806635192062852,"nrmse_med":0.3984647837770223,"peak_ape_med":0.2087719681622831,"peak_bias_med":0.12365808423322941,"peak_hour_err_med":2.0,"fleet_nmae":0.3018622771159054,"ovl80_prec":0.13043478260869565,"ovl80_rec":0.01775147928994083,"ovl80_f1":0.03125,"ovl100_prec":0.0,"ovl100_rec":0.0,"ovl100_f1":0.0,"ovl80_n":169,"ovl100_n":5,"secs":56.7},{"experiment":"main","fold":"summer","tag":"local_q90","strategy":"local_q90","grouping":"-","k":8,"tier":"hourly_full","n_xfmr":500,"nmae_med":0.2934883236885071,"nmae_iqr":0.14640211313962936,"nrmse_med":0.3516291081905365,"peak_ape_med":0.14720855207152422,"peak_bias_med":0.022812075185826078,"peak_hour_err_med":2.225806451612903,"fleet_nmae":0.2626115083694458,"ovl80_prec":0.0,"ovl80_rec":0.0,"ovl80_f1":0.0,"ovl100_prec":0.0,"ovl100_rec":0.0,"ovl100_f1":0.0,"ovl80_n":169,"ovl100_n":5,"secs":131.3},{"experiment":"main","fold":"summer","tag":"lstm_global","strategy":"lstm_global","grouping":"-","k":8,"tier":"hourly_full","n_xfmr":500,"nmae_med":0.169072687625885,"nmae_iqr":0.06894579902291298,"nrmse_med":0.23562419414520264,"peak_ape_med":0.1443605428381312,"peak_bias_med":-0.052469399419703314,"peak_hour_err_med":2.129032258064516,"fleet_nmae":0.15945744514465332,"ovl80_prec":0.0,"ovl80_rec":0.0,"ovl80_f1":0.0,"ovl100_prec":0.0,"ovl100_rec":0.0,"ovl100_f1":0.0,"ovl80_n":169,"ovl100_n":5,"secs":255.4},{"experiment":"grouping","fold":"winter","tag":"cluster|shape_kmeans(k=2)","strategy":"cluster","grouping":"shape_kmeans","k":2,"tier":"hourly_full","n_xfmr":300,"nmae_med":0.18001407384872437,"nmae_iqr":0.10171349719166756,"nrmse_med":0.26519274711608887,"peak_ape_med":0.19828746135857317,"peak_bias_med":-0.17731463708614392,"peak_hour_err_med":3.2580645161290325,"fleet_nmae":0.14878465235233307,"ovl80_prec":0.7,"ovl80_rec":0.23333333333333334,"ovl80_f1":0.35,"ovl100_prec":0.0,"ovl100_rec":0.0,"ovl100_f1":0.0,"ovl80_n":30,"ovl100_n":0,"secs":50.0},{"experiment":"grouping","fold":"winter","tag":"topdown|shape_kmeans(k=2)","strategy":"topdown","grouping":"shape_kmeans","k":2,"tier":"hourly_full","n_xfmr":300,"nmae_med":0.23831237852573395,"nmae_iqr":0.13339996710419655,"nrmse_med":0.32301783561706543,"peak_ape_med":0.23930887637599824,"peak_bias_med":-0.207214419226793,"peak_hour_err_med":3.8225806451612905,"fleet_nmae":0.22146576642990112,"ovl80_prec":0.0,"ovl80_rec":0.0,"ovl80_f1":0.0,"ovl100_prec":0.0,"ovl100_rec":0.0,"ovl100_f1":0.0,"ovl80_n":30,"ovl100_n":0,"secs":12.3},{"experiment":"grouping","fold":"winter","tag":"cluster|shape_kmeans(k=4)","strategy":"cluster","grouping":"shape_kmeans","k":4,"tier":"hourly_full","n_xfmr":300,"nmae_med":0.17866250872612,"nmae_iqr":0.10107257962226868,"nrmse_med":0.26494666934013367,"peak_ape_med":0.19651398119787056,"peak_bias_med":-0.17405417538999068,"peak_hour_err_med":3.2580645161290325,"fleet_nmae":0.14841589331626892,"ovl80_prec":0.875,"ovl80_rec":0.23333333333333334,"ovl80_f1":0.3684210526315789,"ovl100_prec":0.0,"ovl100_rec":0.0,"ovl100_f1":0.0,"ovl80_n":30,"ovl100_n":0,"secs":41.1},{"experiment":"grouping","fold":"winter","tag":"topdown|shape_kmeans(k=4)","strategy":"topdown","grouping":"shape_kmeans","k":4,"tier":"hourly_full","n_xfmr":300,"nmae_med":0.23780685663223267,"nmae_iqr":0.12455303221940994,"nrmse_med":0.31843167543411255,"peak_ape_med":0.24328224577250018,"peak_bias_med":-0.20562500533865644,"peak_hour_err_med":3.838709677419355,"fleet_nmae":0.2153344750404358,"ovl80_prec":0.0,"ovl80_rec":0.0,"ovl80_f1":0.0,"ovl100_prec":0.0,"ovl100_rec":0.0,"ovl100_f1":0.0,"ovl80_n":30,"ovl100_n":0,"secs":12.4},{"experiment":"grouping","fold":"winter","tag":"cluster|shape_kmeans(k=8)","strategy":"cluster","grouping":"shape_kmeans","k":8,"tier":"hourly_full","n_xfmr":300,"nmae_med":0.17923280596733093,"nmae_iqr":0.10137345269322395,"nrmse_med":0.26402363181114197,"peak_ape_med":0.19957494813828697,"peak_bias_med":-0.1732068261837647,"peak_hour_err_med":3.3225806451612905,"fleet_nmae":0.14792874455451965,"ovl80_prec":0.7692307692307693,"ovl80_rec":0.3333333333333333,"ovl80_f1":0.46511627906976744,"ovl100_prec":0.0,"ovl100_rec":0.0,"ovl100_f1":0.0,"ovl80_n":30,"ovl100_n":0,"secs":43.7},{"experiment":"grouping","fold":"winter","tag":"topdown|shape_kmeans(k=8)","strategy":"topdown","grouping":"shape_kmeans","k":8,"tier":"hourly_full","n_xfmr":300,"nmae_med":0.22496379911899567,"nmae_iqr":0.13212060183286667,"nrmse_med":0.3229305148124695,"peak_ape_med":0.24523464821639562,"peak_bias_med":-0.2039179725031699,"peak_hour_err_med":3.8225806451612905,"fleet_nmae":0.2058941125869751,"ovl80_prec":0.25,"ovl80_rec":0.03333333333333333,"ovl80_f1":0.058823529411764705,"ovl100_prec":0.0,"ovl100_rec":0.0,"ovl100_f1":0.0,"ovl80_n":30,"ovl100_n":0,"secs":13.5},{"experiment":"grouping","fold":"winter","tag":"cluster|shape_kmeans(k=16)","strategy":"cluster","grouping":"shape_kmeans","k":16,"tier":"hourly_full","n_xfmr":300,"nmae_med":0.17889589071273804,"nmae_iqr":0.10206655040383339,"nrmse_med":0.27466508746147156,"peak_ape_med":0.20391259956804494,"peak_bias_med":-0.1794743880839838,"peak_hour_err_med":3.3548387096774195,"fleet_nmae":0.14658261835575104,"ovl80_prec":0.7692307692307693,"ovl80_rec":0.3333333333333333,"ovl80_f1":0.46511627906976744,"ovl100_prec":0.0,"ovl100_rec":0.0,"ovl100_f1":0.0,"ovl80_n":30,"ovl100_n":0,"secs":45.1},{"experiment":"grouping","fold":"winter","tag":"topdown|shape_kmeans(k=16)","strategy":"topdown","grouping":"shape_kmeans","k":16,"tier":"hourly_full","n_xfmr":300,"nmae_med":0.22739741206169128,"nmae_iqr":0.12777765095233917,"nrmse_med":0.3111327886581421,"peak_ape_med":0.2358633963120801,"peak_bias_med":-0.18137208767415536,"peak_hour_err_med":3.806451612903226,"fleet_nmae":0.19994813203811646,"ovl80_prec":0.0,"ovl80_rec":0.0,"ovl80_f1":0.0,"ovl100_prec":0.0,"ovl100_rec":0.0,"ovl100_f1":0.0,"ovl80_n":30,"ovl100_n":0,"secs":15.2},{"experiment":"grouping","fold":"winter","tag":"cluster|shape_kmeans(k=32)","strategy":"cluster","grouping":"shape_kmeans","k":32,"tier":"hourly_full","n_xfmr":300,"nmae_med":0.18047818541526794,"nmae_iqr":0.10441654175519943,"nrmse_med":0.2702736258506775,"peak_ape_med":0.19794868634292676,"peak_bias_med":-0.18038101734653597,"peak_hour_err_med":3.2580645161290325,"fleet_nmae":0.14532165229320526,"ovl80_prec":0.7857142857142857,"ovl80_rec":0.36666666666666664,"ovl80_f1":0.5,"ovl100_prec":0.0,"ovl100_rec":0.0,"ovl100_f1":0.0,"ovl80_n":30,"ovl100_n":0,"secs":56.1},{"experiment":"grouping","fold":"winter","tag":"topdown|shape_kmeans(k=32)","strategy":"topdown","grouping":"shape_kmeans","k":32,"tier":"hourly_full","n_xfmr":300,"nmae_med":0.2107824683189392,"nmae_iqr":0.11133237183094025,"nrmse_med":0.2992027997970581,"peak_ape_med":0.22328773639615507,"peak_bias_med":-0.1646963118109852,"peak_hour_err_med":3.5483870967741935,"fleet_nmae":0.18444877862930298,"ovl80_prec":0.42857142857142855,"ovl80_rec":0.1,"ovl80_f1":0.16216216216216217,"ovl100_prec":0.0,"ovl100_rec":0.0,"ovl100_f1":0.0,"ovl80_n":30,"ovl100_n":0,"secs":16.6},{"experiment":"grouping","fold":"winter","tag":"cluster|feature_kmeans(k=2)","strategy":"cluster","grouping":"feature_kmeans","k":2,"tier":"hourly_full","n_xfmr":300,"nmae_med":0.17893573641777039,"nmae_iqr":0.1030694991350174,"nrmse_med":0.26495450735092163,"peak_ape_med":0.1984657242081143,"peak_bias_med":-0.17832549378996895,"peak_hour_err_med":3.274193548387097,"fleet_nmae":0.14600729942321777,"ovl80_prec":0.8,"ovl80_rec":0.26666666666666666,"ovl80_f1":0.4,"ovl100_prec":0.0,"ovl100_rec":0.0,"ovl100_f1":0.0,"ovl80_n":30,"ovl100_n":0,"secs":51.3},{"experiment":"grouping","fold":"winter","tag":"cluster|feature_kmeans(k=4)","strategy":"cluster","grouping":"feature_kmeans","k":4,"tier":"hourly_full","n_xfmr":300,"nmae_med":0.17879515886306763,"nmae_iqr":0.10070953145623207,"nrmse_med":0.2677333354949951,"peak_ape_med":0.20024735177867115,"peak_bias_med":-0.17941868828699714,"peak_hour_err_med":3.241935483870968,"fleet_nmae":0.14780238270759583,"ovl80_prec":0.8888888888888888,"ovl80_rec":0.26666666666666666,"ovl80_f1":0.41025641025641024,"ovl100_prec":0.0,"ovl100_rec":0.0,"ovl100_f1":0.0,"ovl80_n":30,"ovl100_n":0,"secs":42.0},{"experiment":"grouping","fold":"winter","tag":"cluster|feature_kmeans(k=8)","strategy":"cluster","grouping":"feature_kmeans","k":8,"tier":"hourly_full","n_xfmr":300,"nmae_med":0.18092983961105347,"nmae_iqr":0.10298848897218704,"nrmse_med":0.26374131441116333,"peak_ape_med":0.19663033612091713,"peak_bias_med":-0.17124747928051698,"peak_hour_err_med":3.274193548387097,"fleet_nmae":0.14623844623565674,"ovl80_prec":0.8888888888888888,"ovl80_rec":0.26666666666666666,"ovl80_f1":0.41025641025641024,"ovl100_prec":0.0,"ovl100_rec":0.0,"ovl100_f1":0.0,"ovl80_n":30,"ovl100_n":0,"secs":51.5},{"experiment":"grouping","fold":"winter","tag":"cluster|feature_kmeans(k=16)","strategy":"cluster","grouping":"feature_kmeans","k":16,"tier":"hourly_full","n_xfmr":300,"nmae_med":0.17809894680976868,"nmae_iqr":0.09919117763638496,"nrmse_med":0.2666247487068176,"peak_ape_med":0.20189866768909737,"peak_bias_med":-0.1853115154925974,"peak_hour_err_med":3.225806451612903,"fleet_nmae":0.14427462220191956,"ovl80_prec":1.0,"ovl80_rec":0.23333333333333334,"ovl80_f1":0.3783783783783784,"ovl100_prec":0.0,"ovl100_rec":0.0,"ovl100_f1":0.0,"ovl80_n":30,"ovl100_n":0,"secs":52.8},{"experiment":"grouping","fold":"winter","tag":"cluster|feature_kmeans(k=32)","strategy":"cluster","grouping":"feature_kmeans","k":32,"tier":"hourly_full","n_xfmr":300,"nmae_med":0.18107761442661285,"nmae_iqr":0.10776576399803162,"nrmse_med":0.26479989290237427,"peak_ape_med":0.208553510079641,"peak_bias_med":-0.18930418914063804,"peak_hour_err_med":3.241935483870968,"fleet_nmae":0.1442144811153412,"ovl80_prec":0.9,"ovl80_rec":0.3,"ovl80_f1":0.45,"ovl100_prec":0.0,"ovl100_rec":0.0,"ovl100_f1":0.0,"ovl80_n":30,"ovl100_n":0,"secs":59.9},{"experiment":"grouping","fold":"winter","tag":"cluster|daily_kmeans(k=4)","strategy":"cluster","grouping":"daily_kmeans","k":4,"tier":"hourly_full","n_xfmr":300,"nmae_med":0.17868493497371674,"nmae_iqr":0.09720122814178467,"nrmse_med":0.2666577100753784,"peak_ape_med":0.1934198428606314,"peak_bias_med":-0.16746206676978015,"peak_hour_err_med":3.2903225806451615,"fleet_nmae":0.15028050541877747,"ovl80_prec":0.625,"ovl80_rec":0.16666666666666666,"ovl80_f1":0.2631578947368421,"ovl100_prec":0.0,"ovl100_rec":0.0,"ovl100_f1":0.0,"ovl80_n":30,"ovl100_n":0,"secs":55.7},{"experiment":"grouping","fold":"winter","tag":"cluster|daily_kmeans(k=16)","strategy":"cluster","grouping":"daily_kmeans","k":16,"tier":"hourly_full","n_xfmr":300,"nmae_med":0.1773943156003952,"nmae_iqr":0.10247135534882545,"nrmse_med":0.26358407735824585,"peak_ape_med":0.2038167805651263,"peak_bias_med":-0.18093397399981415,"peak_hour_err_med":3.3548387096774195,"fleet_nmae":0.14712552726268768,"ovl80_prec":0.7272727272727273,"ovl80_rec":0.26666666666666666,"ovl80_f1":0.3902439024390244,"ovl100_prec":0.0,"ovl100_rec":0.0,"ovl100_f1":0.0,"ovl80_n":30,"ovl100_n":0,"secs":49.2},{"experiment":"grouping","fold":"winter","tag":"cluster|ward_corr(k=4)","strategy":"cluster","grouping":"ward_corr","k":4,"tier":"hourly_full","n_xfmr":300,"nmae_med":0.1786542534828186,"nmae_iqr":0.09962539374828339,"nrmse_med":0.2645084261894226,"peak_ape_med":0.1937427596947659,"peak_bias_med":-0.16967620513582182,"peak_hour_err_med":3.3225806451612905,"fleet_nmae":0.14716866612434387,"ovl80_prec":0.6666666666666666,"ovl80_rec":0.26666666666666666,"ovl80_f1":0.38095238095238093,"ovl100_prec":0.0,"ovl100_rec":0.0,"ovl100_f1":0.0,"ovl80_n":30,"ovl100_n":0,"secs":65.5},{"experiment":"grouping","fold":"winter","tag":"cluster|ward_corr(k=16)","strategy":"cluster","grouping":"ward_corr","k":16,"tier":"hourly_full","n_xfmr":300,"nmae_med":0.1776290088891983,"nmae_iqr":0.10131939873099327,"nrmse_med":0.26909181475639343,"peak_ape_med":0.20547242516711833,"peak_bias_med":-0.17642100089541335,"peak_hour_err_med":3.3548387096774195,"fleet_nmae":0.14647454023361206,"ovl80_prec":0.6666666666666666,"ovl80_rec":0.26666666666666666,"ovl80_f1":0.38095238095238093,"ovl100_prec":0.0,"ovl100_rec":0.0,"ovl100_f1":0.0,"ovl80_n":30,"ovl100_n":0,"secs":45.6},{"experiment":"grouping","fold":"winter","tag":"cluster|attribute(k=27)","strategy":"cluster","grouping":"attribute","k":27,"tier":"hourly_full","n_xfmr":300,"nmae_med":0.18072475492954254,"nmae_iqr":0.1047457791864872,"nrmse_med":0.2639573812484741,"peak_ape_med":0.19748031657805004,"peak_bias_med":-0.17541174716579036,"peak_hour_err_med":3.241935483870968,"fleet_nmae":0.1454777866601944,"ovl80_prec":0.8333333333333334,"ovl80_rec":0.3333333333333333,"ovl80_f1":0.47619047619047616,"ovl100_prec":0.0,"ovl100_rec":0.0,"ovl100_f1":0.0,"ovl80_n":30,"ovl100_n":0,"secs":60.7},{"experiment":"grouping","fold":"winter","tag":"cluster|feeder(k=28)","strategy":"cluster","grouping":"feeder","k":28,"tier":"hourly_full","n_xfmr":300,"nmae_med":0.1785532832145691,"nmae_iqr":0.10353763028979301,"nrmse_med":0.2670305371284485,"peak_ape_med":0.19374391764276586,"peak_bias_med":-0.1713191119525882,"peak_hour_err_med":3.2903225806451615,"fleet_nmae":0.1504444032907486,"ovl80_prec":0.8,"ovl80_rec":0.26666666666666666,"ovl80_f1":0.4,"ovl100_prec":0.0,"ovl100_rec":0.0,"ovl100_f1":0.0,"ovl80_n":30,"ovl100_n":0,"secs":63.0},{"experiment":"grouping","fold":"winter","tag":"cluster|dtw_kmedoids(k=8)","strategy":"cluster","grouping":"dtw_kmedoids","k":8,"tier":"hourly_full","n_xfmr":300,"nmae_med":0.18054455518722534,"nmae_iqr":0.10317065566778183,"nrmse_med":0.27114084362983704,"peak_ape_med":0.20078778064869823,"peak_bias_med":-0.1754536632553584,"peak_hour_err_med":3.370967741935484,"fleet_nmae":0.14885370433330536,"ovl80_prec":0.7142857142857143,"ovl80_rec":0.16666666666666666,"ovl80_f1":0.2702702702702703,"ovl100_prec":0.0,"ovl100_rec":0.0,"ovl100_f1":0.0,"ovl80_n":30,"ovl100_n":0,"secs":46.0},{"experiment":"coverage","fold":"winter","tag":"class_profile","strategy":"class_profile","grouping":"-","k":8,"tier":"ami15","n_xfmr":160,"nmae_med":0.31142619252204895,"nmae_iqr":0.12196735292673111,"nrmse_med":0.3999950587749481,"peak_ape_med":0.2578610610367069,"peak_bias_med":-0.18699446663207886,"peak_hour_err_med":3.8870967741935485,"fleet_nmae":0.3155999183654785,"ovl80_prec":0.0,"ovl80_rec":0.0,"ovl80_f1":0.0,"ovl100_prec":0.0,"ovl100_rec":0.0,"ovl100_f1":0.0,"ovl80_n":19,"ovl100_n":1,"secs":6.6},{"experiment":"coverage","fold":"winter","tag":"donor_attr","strategy":"donor_attr","grouping":"attribute","k":8,"tier":"ami15","n_xfmr":160,"nmae_med":0.30895155668258667,"nmae_iqr":0.12829355895519257,"nrmse_med":0.40766066312789917,"peak_ape_med":0.24568091831620664,"peak_bias_med":-0.16461011039979395,"peak_hour_err_med":3.8870967741935485,"fleet_nmae":0.3202683925628662,"ovl80_prec":0.0,"ovl80_rec":0.0,"ovl80_f1":0.0,"ovl100_prec":0.0,"ovl100_rec":0.0,"ovl100_f1":0.0,"ovl80_n":19,"ovl100_n":1,"secs":6.5},{"experiment":"coverage","fold":"winter","tag":"donor_shape","strategy":"donor_shape","grouping":"shape_kmeans","k":8,"tier":"ami15","n_xfmr":160,"nmae_med":0.3338899314403534,"nmae_iqr":0.13308744132518768,"nrmse_med":0.43683600425720215,"peak_ape_med":0.258768365703403,"peak_bias_med":-0.11400375649945119,"peak_hour_err_med":3.9838709677419355,"fleet_nmae":0.3294263780117035,"ovl80_prec":0.0,"ovl80_rec":0.0,"ovl80_f1":0.0,"ovl100_prec":0.0,"ovl100_rec":0.0,"ovl100_f1":0.0,"ovl80_n":19,"ovl100_n":1,"secs":6.0},{"experiment":"coverage","fold":"winter","tag":"topdown_attr","strategy":"topdown_attr","grouping":"attribute","k":8,"tier":"ami15","n_xfmr":134,"nmae_med":0.2656584084033966,"nmae_iqr":0.12775656580924988,"nrmse_med":0.3698638677597046,"peak_ape_med":0.2946620512182915,"peak_bias_med":-0.29294178905265944,"peak_hour_err_med":4.209677419354838,"fleet_nmae":0.2828737199306488,"ovl80_prec":0.0,"ovl80_rec":0.0,"ovl80_f1":0.0,"ovl100_prec":0.0,"ovl100_rec":0.0,"ovl100_f1":0.0,"ovl80_n":18,"ovl100_n":1,"secs":6.8},{"experiment":"coverage","fold":"winter","tag":"topdown_shape","strategy":"topdown_shape","grouping":"shape_kmeans","k":8,"tier":"ami15","n_xfmr":160,"nmae_med":0.27104848623275757,"nmae_iqr":0.14476278424263,"nrmse_med":0.3724164366722107,"peak_ape_med":0.29727693778582875,"peak_bias_med":-0.287925370097641,"peak_hour_err_med":4.419354838709677,"fleet_nmae":0.28569909930229187,"ovl80_prec":0.0,"ovl80_rec":0.0,"ovl80_f1":0.0,"ovl100_prec":0.0,"ovl100_rec":0.0,"ovl100_f1":0.0,"ovl80_n":19,"ovl100_n":1,"secs":7.3},{"experiment":"coverage","fold":"winter","tag":"cold_global","strategy":"cold_global","grouping":"-","k":8,"tier":"ami15","n_xfmr":160,"nmae_med":0.28092738561500263,"nmae_iqr":0.1304503867909732,"nrmse_med":0.3899220065486558,"peak_ape_med":0.2918354540165836,"peak_bias_med":-0.23733851618918,"peak_hour_err_med":4.983870967741936,"fleet_nmae":0.29998285165832567,"ovl80_prec":0.0,"ovl80_rec":0.0,"ovl80_f1":0.0,"ovl100_prec":0.0,"ovl100_rec":0.0,"ovl100_f1":0.0,"ovl80_n":19,"ovl100_n":1,"secs":12.9},{"experiment":"coverage","fold":"winter","tag":"cold_global_group","strategy":"cold_global_group","grouping":"shape_kmeans","k":8,"tier":"ami15","n_xfmr":160,"nmae_med":0.2878533985072867,"nmae_iqr":0.14782058024170508,"nrmse_med":0.3927440182574078,"peak_ape_med":0.2852988565945671,"peak_bias_med":-0.22760414673756663,"peak_hour_err_med":5.290322580645161,"fleet_nmae":0.2996554576613935,"ovl80_prec":0.0,"ovl80_rec":0.0,"ovl80_f1":0.0,"ovl100_prec":0.0,"ovl100_rec":0.0,"ovl100_f1":0.0,"ovl80_n":19,"ovl100_n":1,"secs":11.4},{"experiment":"coverage","fold":"winter","tag":"local_oracle","strategy":"local_oracle","grouping":"-","k":8,"tier":"ami15","n_xfmr":160,"nmae_med":0.18459227681159973,"nmae_iqr":0.09693019837141037,"nrmse_med":0.27155452966690063,"peak_ape_med":0.19692063024417766,"peak_bias_med":-0.16587138931537349,"peak_hour_err_med":3.693548387096774,"fleet_nmae":0.1574746072292328,"ovl80_prec":0.0,"ovl80_rec":0.0,"ovl80_f1":0.0,"ovl100_prec":0.0,"ovl100_rec":0.0,"ovl100_f1":0.0,"ovl80_n":19,"ovl100_n":1,"secs":52.8},{"experiment":"coverage","fold":"winter","tag":"class_profile","strategy":"class_profile","grouping":"-","k":8,"tier":"ami35","n_xfmr":160,"nmae_med":0.3076404929161072,"nmae_iqr":0.12421075999736786,"nrmse_med":0.4030926823616028,"peak_ape_med":0.24860227892115233,"peak_bias_med":-0.16668854180898052,"peak_hour_err_med":3.8870967741935485,"fleet_nmae":0.3169672191143036,"ovl80_prec":0.0,"ovl80_rec":0.0,"ovl80_f1":0.0,"ovl100_prec":0.0,"ovl100_rec":0.0,"ovl100_f1":0.0,"ovl80_n":19,"ovl100_n":1,"secs":6.6},{"experiment":"coverage","fold":"winter","tag":"donor_attr","strategy":"donor_attr","grouping":"attribute","k":8,"tier":"ami35","n_xfmr":160,"nmae_med":0.3144180178642273,"nmae_iqr":0.12364278361201286,"nrmse_med":0.4202601909637451,"peak_ape_med":0.2416067921721767,"peak_bias_med":-0.14008175668817374,"peak_hour_err_med":3.9193548387096775,"fleet_nmae":0.31892257928848267,"ovl80_prec":0.0,"ovl80_rec":0.0,"ovl80_f1":0.0,"ovl100_prec":0.0,"ovl100_rec":0.0,"ovl100_f1":0.0,"ovl80_n":19,"ovl100_n":1,"secs":6.4},{"experiment":"coverage","fold":"winter","tag":"donor_shape","strategy":"donor_shape","grouping":"shape_kmeans","k":8,"tier":"ami35","n_xfmr":160,"nmae_med":0.3154789209365845,"nmae_iqr":0.11967212706804276,"nrmse_med":0.4160836935043335,"peak_ape_med":0.24704781126591469,"peak_bias_med":-0.12031789542543853,"peak_hour_err_med":3.9838709677419355,"fleet_nmae":0.32088109850883484,"ovl80_prec":0.0,"ovl80_rec":0.0,"ovl80_f1":0.0,"ovl100_prec":0.0,"ovl100_rec":0.0,"ovl100_f1":0.0,"ovl80_n":19,"ovl100_n":1,"secs":6.4},{"experiment":"coverage","fold":"winter","tag":"topdown_attr","strategy":"topdown_attr","grouping":"attribute","k":8,"tier":"ami35","n_xfmr":148,"nmae_med":0.2538267970085144,"nmae_iqr":0.14760307595133781,"nrmse_med":0.357835590839386,"peak_ape_med":0.28593790576222444,"peak_bias_med":-0.2722131232393064,"peak_hour_err_med":4.32258064516129,"fleet_nmae":0.25181451439857483,"ovl80_prec":0.0,"ovl80_rec":0.0,"ovl80_f1":0.0,"ovl100_prec":0.0,"ovl100_rec":0.0,"ovl100_f1":0.0,"ovl80_n":17,"ovl100_n":0,"secs":8.1},{"experiment":"coverage","fold":"winter","tag":"topdown_shape","strategy":"topdown_shape","grouping":"shape_kmeans","k":8,"tier":"ami35","n_xfmr":160,"nmae_med":0.27220237255096436,"nmae_iqr":0.1445482335984707,"nrmse_med":0.3550514876842499,"peak_ape_med":0.28947138337178097,"peak_bias_med":-0.23481784977259174,"peak_hour_err_med":5.096774193548387,"fleet_nmae":0.2864237129688263,"ovl80_prec":0.0,"ovl80_rec":0.0,"ovl80_f1":0.0,"ovl100_prec":0.0,"ovl100_rec":0.0,"ovl100_f1":0.0,"ovl80_n":19,"ovl100_n":1,"secs":7.9},{"experiment":"coverage","fold":"winter","tag":"cold_global","strategy":"cold_global","grouping":"-","k":8,"tier":"ami35","n_xfmr":160,"nmae_med":0.2468268433549732,"nmae_iqr":0.1414151106957205,"nrmse_med":0.3411477384915365,"peak_ape_med":0.27578058810870715,"peak_bias_med":-0.2523684545594831,"peak_hour_err_med":4.645161290322581,"fleet_nmae":0.2837167842241209,"ovl80_prec":0.0,"ovl80_rec":0.0,"ovl80_f1":0.0,"ovl100_prec":0.0,"ovl100_rec":0.0,"ovl100_f1":0.0,"ovl80_n":19,"ovl100_n":1,"secs":17.7},{"experiment":"coverage","fold":"winter","tag":"cold_global_group","strategy":"cold_global_group","grouping":"shape_kmeans","k":8,"tier":"ami35","n_xfmr":160,"nmae_med":0.2753841246592197,"nmae_iqr":0.17891303288339236,"nrmse_med":0.36664803742951213,"peak_ape_med":0.2833023321382131,"peak_bias_med":-0.24300673388450794,"peak_hour_err_med":4.967741935483871,"fleet_nmae":0.29842889776056264,"ovl80_prec":0.0,"ovl80_rec":0.0,"ovl80_f1":0.0,"ovl100_prec":0.0,"ovl100_rec":0.0,"ovl100_f1":0.0,"ovl80_n":19,"ovl100_n":1,"secs":18.8},{"experiment":"coverage","fold":"winter","tag":"local_oracle","strategy":"local_oracle","grouping":"-","k":8,"tier":"ami35","n_xfmr":160,"nmae_med":0.18459227681159973,"nmae_iqr":0.09693019837141037,"nrmse_med":0.27155452966690063,"peak_ape_med":0.19692063024417766,"peak_bias_med":-0.16587138931537349,"peak_hour_err_med":3.693548387096774,"fleet_nmae":0.1574746072292328,"ovl80_prec":0.0,"ovl80_rec":0.0,"ovl80_f1":0.0,"ovl100_prec":0.0,"ovl100_rec":0.0,"ovl100_f1":0.0,"ovl80_n":19,"ovl100_n":1,"secs":53.2},{"experiment":"coverage","fold":"winter","tag":"class_profile","strategy":"class_profile","grouping":"-","k":8,"tier":"ami70","n_xfmr":160,"nmae_med":0.30791640281677246,"nmae_iqr":0.1237652525305748,"nrmse_med":0.40138429403305054,"peak_ape_med":0.2487669123577014,"peak_bias_med":-0.16816357455606903,"peak_hour_err_med":3.903225806451613,"fleet_nmae":0.31609073281288147,"ovl80_prec":0.0,"ovl80_rec":0.0,"ovl80_f1":0.0,"ovl100_prec":0.0,"ovl100_rec":0.0,"ovl100_f1":0.0,"ovl80_n":19,"ovl100_n":1,"secs":6.6},{"experiment":"coverage","fold":"winter","tag":"donor_attr","strategy":"donor_attr","grouping":"attribute","k":8,"tier":"ami70","n_xfmr":160,"nmae_med":0.317051500082016,"nmae_iqr":0.12639503553509712,"nrmse_med":0.4216760993003845,"peak_ape_med":0.24209361649569006,"peak_bias_med":-0.13390491694031703,"peak_hour_err_med":3.870967741935484,"fleet_nmae":0.3236806094646454,"ovl80_prec":0.0,"ovl80_rec":0.0,"ovl80_f1":0.0,"ovl100_prec":0.0,"ovl100_rec":0.0,"ovl100_f1":0.0,"ovl80_n":19,"ovl100_n":1,"secs":6.8},{"experiment":"coverage","fold":"winter","tag":"donor_shape","strategy":"donor_shape","grouping":"shape_kmeans","k":8,"tier":"ami70","n_xfmr":160,"nmae_med":0.32634884119033813,"nmae_iqr":0.13183673471212387,"nrmse_med":0.4273190498352051,"peak_ape_med":0.24064858595750505,"peak_bias_med":-0.13391805697052228,"peak_hour_err_med":4.161290322580645,"fleet_nmae":0.3317212462425232,"ovl80_prec":0.0,"ovl80_rec":0.0,"ovl80_f1":0.0,"ovl100_prec":0.0,"ovl100_rec":0.0,"ovl100_f1":0.0,"ovl80_n":19,"ovl100_n":1,"secs":6.6},{"experiment":"coverage","fold":"winter","tag":"topdown_attr","strategy":"topdown_attr","grouping":"attribute","k":8,"tier":"ami70","n_xfmr":155,"nmae_med":0.2629444897174835,"nmae_iqr":0.14536213129758835,"nrmse_med":0.38083139061927795,"peak_ape_med":0.29209863543210013,"peak_bias_med":-0.25138223075097604,"peak_hour_err_med":4.354838709677419,"fleet_nmae":0.299805223941803,"ovl80_prec":0.0,"ovl80_rec":0.0,"ovl80_f1":0.0,"ovl100_prec":0.0,"ovl100_rec":0.0,"ovl100_f1":0.0,"ovl80_n":18,"ovl100_n":1,"secs":9.9},{"experiment":"coverage","fold":"winter","tag":"topdown_shape","strategy":"topdown_shape","grouping":"shape_kmeans","k":8,"tier":"ami70","n_xfmr":160,"nmae_med":0.2704872488975525,"nmae_iqr":0.15358532220125198,"nrmse_med":0.365389883518219,"peak_ape_med":0.2850593203648685,"peak_bias_med":-0.23410030109657637,"peak_hour_err_med":4.661290322580646,"fleet_nmae":0.3008405268192291,"ovl80_prec":0.0,"ovl80_rec":0.0,"ovl80_f1":0.0,"ovl100_prec":0.0,"ovl100_rec":0.0,"ovl100_f1":0.0,"ovl80_n":19,"ovl100_n":1,"secs":8.9},{"experiment":"coverage","fold":"winter","tag":"cold_global","strategy":"cold_global","grouping":"-","k":8,"tier":"ami70","n_xfmr":160,"nmae_med":0.25091235781985954,"nmae_iqr":0.11904581879620199,"nrmse_med":0.3406688336063084,"peak_ape_med":0.25199033922403524,"peak_bias_med":-0.21836722738172348,"peak_hour_err_med":4.5,"fleet_nmae":0.2737774263912549,"ovl80_prec":0.0,"ovl80_rec":0.0,"ovl80_f1":0.0,"ovl100_prec":0.0,"ovl100_rec":0.0,"ovl100_f1":0.0,"ovl80_n":19,"ovl100_n":1,"secs":29.3},{"experiment":"coverage","fold":"winter","tag":"cold_global_group","strategy":"cold_global_group","grouping":"shape_kmeans","k":8,"tier":"ami70","n_xfmr":160,"nmae_med":0.2685413782212286,"nmae_iqr":0.15173149197223473,"nrmse_med":0.3693797605605015,"peak_ape_med":0.27418935766234254,"peak_bias_med":-0.23932439652557888,"peak_hour_err_med":4.82258064516129,"fleet_nmae":0.30977328286979916,"ovl80_prec":0.0,"ovl80_rec":0.0,"ovl80_f1":0.0,"ovl100_prec":0.0,"ovl100_rec":0.0,"ovl100_f1":0.0,"ovl80_n":19,"ovl100_n":1,"secs":31.0},{"experiment":"coverage","fold":"winter","tag":"local_oracle","strategy":"local_oracle","grouping":"-","k":8,"tier":"ami70","n_xfmr":160,"nmae_med":0.18459227681159973,"nmae_iqr":0.09693019837141037,"nrmse_med":0.27155452966690063,"peak_ape_med":0.19692063024417766,"peak_bias_med":-0.16587138931537349,"peak_hour_err_med":3.693548387096774,"fleet_nmae":0.1574746072292328,"ovl80_prec":0.0,"ovl80_rec":0.0,"ovl80_f1":0.0,"ovl100_prec":0.0,"ovl100_rec":0.0,"ovl100_f1":0.0,"ovl80_n":19,"ovl100_n":1,"secs":54.4},{"experiment":"dirty","fold":"winter","tag":"local","strategy":"local","grouping":"shape_kmeans","k":8,"tier":"clean_0.0","n_xfmr":350,"nmae_med":0.19302654266357422,"nmae_iqr":0.08680228888988495,"nrmse_med":0.2762123942375183,"peak_ape_med":0.18631946022299328,"peak_bias_med":-0.14947429448065738,"peak_hour_err_med":3.4838709677419355,"fleet_nmae":0.15443627536296844,"ovl80_prec":0.7272727272727273,"ovl80_rec":0.34782608695652173,"ovl80_f1":0.47058823529411764,"ovl100_prec":0.0,"ovl100_rec":0.0,"ovl100_f1":0.0,"ovl80_n":23,"ovl100_n":0,"secs":123.4},{"experiment":"dirty","fold":"winter","tag":"cluster","strategy":"cluster","grouping":"shape_kmeans","k":8,"tier":"clean_0.0","n_xfmr":350,"nmae_med":0.18839459121227264,"nmae_iqr":0.07311409339308739,"nrmse_med":0.2701341509819031,"peak_ape_med":0.2134940517886031,"peak_bias_med":-0.18616332065674568,"peak_hour_err_med":3.403225806451613,"fleet_nmae":0.15505483746528625,"ovl80_prec":0.4,"ovl80_rec":0.43478260869565216,"ovl80_f1":0.4166666666666667,"ovl100_prec":0.0,"ovl100_rec":0.0,"ovl100_f1":0.0,"ovl80_n":23,"ovl100_n":0,"secs":51.4},{"experiment":"dirty","fold":"winter","tag":"global","strategy":"global","grouping":"shape_kmeans","k":8,"tier":"clean_0.0","n_xfmr":350,"nmae_med":0.19199241664188677,"nmae_iqr":0.07653856635696768,"nrmse_med":0.276494709879797,"peak_ape_med":0.19702900850584978,"peak_bias_med":-0.17774250168028483,"peak_hour_err_med":3.4516129032258065,"fleet_nmae":0.16156953424748316,"ovl80_prec":0.6363636363636364,"ovl80_rec":0.30434782608695654,"ovl80_f1":0.4117647058823529,"ovl100_prec":0.0,"ovl100_rec":0.0,"ovl100_f1":0.0,"ovl80_n":23,"ovl100_n":0,"secs":46.7},{"experiment":"dirty","fold":"winter","tag":"local","strategy":"local","grouping":"shape_kmeans","k":8,"tier":"mcar_0.05","n_xfmr":350,"nmae_med":0.19442294538021088,"nmae_iqr":0.08473812788724899,"nrmse_med":0.27664288878440857,"peak_ape_med":0.1829808033597205,"peak_bias_med":-0.1505345142251181,"peak_hour_err_med":3.4838709677419355,"fleet_nmae":0.15496115386486053,"ovl80_prec":0.8181818181818182,"ovl80_rec":0.391304347826087,"ovl80_f1":0.5294117647058824,"ovl100_prec":0.0,"ovl100_rec":0.0,"ovl100_f1":0.0,"ovl80_n":23,"ovl100_n":0,"secs":118.1},{"experiment":"dirty","fold":"winter","tag":"cluster","strategy":"cluster","grouping":"shape_kmeans","k":8,"tier":"mcar_0.05","n_xfmr":350,"nmae_med":0.1895095705986023,"nmae_iqr":0.07463697344064713,"nrmse_med":0.2745878994464874,"peak_ape_med":0.19798544824363723,"peak_bias_med":-0.17840817471921083,"peak_hour_err_med":3.338709677419355,"fleet_nmae":0.15731880068778992,"ovl80_prec":0.7272727272727273,"ovl80_rec":0.34782608695652173,"ovl80_f1":0.47058823529411764,"ovl100_prec":0.0,"ovl100_rec":0.0,"ovl100_f1":0.0,"ovl80_n":23,"ovl100_n":0,"secs":43.6},{"experiment":"dirty","fold":"winter","tag":"global","strategy":"global","grouping":"shape_kmeans","k":8,"tier":"mcar_0.05","n_xfmr":350,"nmae_med":0.19264758548219857,"nmae_iqr":0.0785469626255069,"nrmse_med":0.2762863105993736,"peak_ape_med":0.19442940478098925,"peak_bias_med":-0.17238142244294552,"peak_hour_err_med":3.4193548387096775,"fleet_nmae":0.16239213083111986,"ovl80_prec":0.5555555555555556,"ovl80_rec":0.21739130434782608,"ovl80_f1":0.3125,"ovl100_prec":0.0,"ovl100_rec":0.0,"ovl100_f1":0.0,"ovl80_n":23,"ovl100_n":0,"secs":43.2},{"experiment":"dirty","fold":"winter","tag":"local","strategy":"local","grouping":"shape_kmeans","k":8,"tier":"mcar_0.1","n_xfmr":350,"nmae_med":0.19592374563217163,"nmae_iqr":0.08649573475122452,"nrmse_med":0.2776079773902893,"peak_ape_med":0.18282921406752128,"peak_bias_med":-0.14227761751821927,"peak_hour_err_med":3.532258064516129,"fleet_nmae":0.15638653934001923,"ovl80_prec":0.7272727272727273,"ovl80_rec":0.34782608695652173,"ovl80_f1":0.47058823529411764,"ovl100_prec":0.0,"ovl100_rec":0.0,"ovl100_f1":0.0,"ovl80_n":23,"ovl100_n":0,"secs":117.6},{"experiment":"dirty","fold":"winter","tag":"cluster","strategy":"cluster","grouping":"shape_kmeans","k":8,"tier":"mcar_0.1","n_xfmr":350,"nmae_med":0.1879202425479889,"nmae_iqr":0.07640421018004417,"nrmse_med":0.2764430344104767,"peak_ape_med":0.20279936149956718,"peak_bias_med":-0.18558978923265973,"peak_hour_err_med":3.3548387096774195,"fleet_nmae":0.1551702916622162,"ovl80_prec":0.38095238095238093,"ovl80_rec":0.34782608695652173,"ovl80_f1":0.36363636363636365,"ovl100_prec":0.0,"ovl100_rec":0.0,"ovl100_f1":0.0,"ovl80_n":23,"ovl100_n":0,"secs":50.0},{"experiment":"dirty","fold":"winter","tag":"global","strategy":"global","grouping":"shape_kmeans","k":8,"tier":"mcar_0.1","n_xfmr":350,"nmae_med":0.19528209403895014,"nmae_iqr":0.07906541647917215,"nrmse_med":0.2771886632072925,"peak_ape_med":0.19377743774227926,"peak_bias_med":-0.17107549140575196,"peak_hour_err_med":3.4193548387096775,"fleet_nmae":0.16568966822401718,"ovl80_prec":0.625,"ovl80_rec":0.21739130434782608,"ovl80_f1":0.3225806451612903,"ovl100_prec":0.0,"ovl100_rec":0.0,"ovl100_f1":0.0,"ovl80_n":23,"ovl100_n":0,"secs":38.0},{"experiment":"dirty","fold":"winter","tag":"local","strategy":"local","grouping":"shape_kmeans","k":8,"tier":"mcar_0.2","n_xfmr":350,"nmae_med":0.19679436087608337,"nmae_iqr":0.0885615348815918,"nrmse_med":0.2847597002983093,"peak_ape_med":0.17873841901910642,"peak_bias_med":-0.13543083035807696,"peak_hour_err_med":3.5161290322580645,"fleet_nmae":0.15929126739501953,"ovl80_prec":0.9,"ovl80_rec":0.391304347826087,"ovl80_f1":0.5454545454545454,"ovl100_prec":0.0,"ovl100_rec":0.0,"ovl100_f1":0.0,"ovl80_n":23,"ovl100_n":0,"secs":116.4},{"experiment":"dirty","fold":"winter","tag":"cluster","strategy":"cluster","grouping":"shape_kmeans","k":8,"tier":"mcar_0.2","n_xfmr":350,"nmae_med":0.19369074702262878,"nmae_iqr":0.07983018085360527,"nrmse_med":0.27732938528060913,"peak_ape_med":0.18838056357156846,"peak_bias_med":-0.15731664269133622,"peak_hour_err_med":3.5,"fleet_nmae":0.15835116803646088,"ovl80_prec":0.47058823529411764,"ovl80_rec":0.34782608695652173,"ovl80_f1":0.4,"ovl100_prec":0.0,"ovl100_rec":0.0,"ovl100_f1":0.0,"ovl80_n":23,"ovl100_n":0,"secs":49.2},{"experiment":"dirty","fold":"winter","tag":"global","strategy":"global","grouping":"shape_kmeans","k":8,"tier":"mcar_0.2","n_xfmr":350,"nmae_med":0.19492863846209202,"nmae_iqr":0.08298161689754346,"nrmse_med":0.27975490621888643,"peak_ape_med":0.17954209655236114,"peak_bias_med":-0.14758422263987092,"peak_hour_err_med":3.532258064516129,"fleet_nmae":0.1632447529552694,"ovl80_prec":0.29411764705882354,"ovl80_rec":0.21739130434782608,"ovl80_f1":0.25,"ovl100_prec":0.0,"ovl100_rec":0.0,"ovl100_f1":0.0,"ovl80_n":23,"ovl100_n":0,"secs":57.6},{"experiment":"dirty","fold":"winter","tag":"local","strategy":"local","grouping":"shape_kmeans","k":8,"tier":"outage_0.2","n_xfmr":350,"nmae_med":0.19950366020202637,"nmae_iqr":0.09068575128912926,"nrmse_med":0.28330469131469727,"peak_ape_med":0.18044594571655315,"peak_bias_med":-0.1385239818689203,"peak_hour_err_med":3.532258064516129,"fleet_nmae":0.16136974096298218,"ovl80_prec":0.5,"ovl80_rec":0.30434782608695654,"ovl80_f1":0.3783783783783784,"ovl100_prec":0.0,"ovl100_rec":0.0,"ovl100_f1":0.0,"ovl80_n":23,"ovl100_n":0,"secs":117.4},{"experiment":"dirty","fold":"winter","tag":"cluster","strategy":"cluster","grouping":"shape_kmeans","k":8,"tier":"outage_0.2","n_xfmr":350,"nmae_med":0.19354477524757385,"nmae_iqr":0.08357543125748634,"nrmse_med":0.2781926989555359,"peak_ape_med":0.1930612346998626,"peak_bias_med":-0.15804340216545237,"peak_hour_err_med":3.4516129032258065,"fleet_nmae":0.15893232822418213,"ovl80_prec":0.6470588235294118,"ovl80_rec":0.4782608695652174,"ovl80_f1":0.55,"ovl100_prec":0.0,"ovl100_rec":0.0,"ovl100_f1":0.0,"ovl80_n":23,"ovl100_n":0,"secs":48.9},{"experiment":"dirty","fold":"winter","tag":"global","strategy":"global","grouping":"shape_kmeans","k":8,"tier":"outage_0.2","n_xfmr":350,"nmae_med":0.19604416361983965,"nmae_iqr":0.08248510267625267,"nrmse_med":0.28151937683969264,"peak_ape_med":0.18260567624121576,"peak_bias_med":-0.15088415204176853,"peak_hour_err_med":3.4838709677419355,"fleet_nmae":0.16461940021671206,"ovl80_prec":0.6666666666666666,"ovl80_rec":0.08695652173913043,"ovl80_f1":0.15384615384615385,"ovl100_prec":0.0,"ovl100_rec":0.0,"ovl100_f1":0.0,"ovl80_n":23,"ovl100_n":0,"secs":53.7},{"experiment":"dirty","fold":"winter","tag":"local","strategy":"local","grouping":"shape_kmeans","k":8,"tier":"frozen_0.2","n_xfmr":350,"nmae_med":0.1981372833251953,"nmae_iqr":0.08599307760596275,"nrmse_med":0.2799783945083618,"peak_ape_med":0.19189767969862348,"peak_bias_med":-0.15902307622074602,"peak_hour_err_med":3.6451612903225805,"fleet_nmae":0.16393616795539856,"ovl80_prec":0.7272727272727273,"ovl80_rec":0.34782608695652173,"ovl80_f1":0.47058823529411764,"ovl100_prec":0.0,"ovl100_rec":0.0,"ovl100_f1":0.0,"ovl80_n":23,"ovl100_n":0,"secs":120.2},{"experiment":"dirty","fold":"winter","tag":"cluster","strategy":"cluster","grouping":"shape_kmeans","k":8,"tier":"frozen_0.2","n_xfmr":350,"nmae_med":0.19275414943695068,"nmae_iqr":0.08104703575372696,"nrmse_med":0.2742263674736023,"peak_ape_med":0.20476109980119228,"peak_bias_med":-0.1934964522539127,"peak_hour_err_med":3.3870967741935485,"fleet_nmae":0.1607578843832016,"ovl80_prec":0.5,"ovl80_rec":0.391304347826087,"ovl80_f1":0.43902439024390244,"ovl100_prec":0.0,"ovl100_rec":0.0,"ovl100_f1":0.0,"ovl80_n":23,"ovl100_n":0,"secs":59.8},{"experiment":"dirty","fold":"winter","tag":"global","strategy":"global","grouping":"shape_kmeans","k":8,"tier":"frozen_0.2","n_xfmr":350,"nmae_med":0.19230971980332218,"nmae_iqr":0.07775472236943065,"nrmse_med":0.27762748561802675,"peak_ape_med":0.19375025103933402,"peak_bias_med":-0.17873407994769497,"peak_hour_err_med":3.3870967741935485,"fleet_nmae":0.16599339078680447,"ovl80_prec":0.4166666666666667,"ovl80_rec":0.21739130434782608,"ovl80_f1":0.2857142857142857,"ovl100_prec":0.0,"ovl100_rec":0.0,"ovl100_f1":0.0,"ovl80_n":23,"ovl100_n":0,"secs":66.5},{"experiment":"dirty","fold":"winter","tag":"local","strategy":"local","grouping":"shape_kmeans","k":8,"tier":"spike_0.01","n_xfmr":350,"nmae_med":0.2260926067829132,"nmae_iqr":0.09599092975258827,"nrmse_med":0.31456834077835083,"peak_ape_med":0.190981823218716,"peak_bias_med":-0.029675692064507354,"peak_hour_err_med":3.967741935483871,"fleet_nmae":0.19744530320167542,"ovl80_prec":0.21052631578947367,"ovl80_rec":0.5217391304347826,"ovl80_f1":0.3,"ovl100_prec":0.0,"ovl100_rec":0.0,"ovl100_f1":0.0,"ovl80_n":23,"ovl100_n":0,"secs":120.1},{"experiment":"dirty","fold":"winter","tag":"cluster","strategy":"cluster","grouping":"shape_kmeans","k":8,"tier":"spike_0.01","n_xfmr":350,"nmae_med":0.1962839663028717,"nmae_iqr":0.07662905007600784,"nrmse_med":0.27607959508895874,"peak_ape_med":0.17709808350510653,"peak_bias_med":-0.14480092586581444,"peak_hour_err_med":3.403225806451613,"fleet_nmae":0.16353647410869598,"ovl80_prec":0.2727272727272727,"ovl80_rec":0.2608695652173913,"ovl80_f1":0.26666666666666666,"ovl100_prec":0.0,"ovl100_rec":0.0,"ovl100_f1":0.0,"ovl80_n":23,"ovl100_n":0,"secs":47.3},{"experiment":"dirty","fold":"winter","tag":"global","strategy":"global","grouping":"shape_kmeans","k":8,"tier":"spike_0.01","n_xfmr":350,"nmae_med":0.19722727053552588,"nmae_iqr":0.07892063237467534,"nrmse_med":0.27223592971045907,"peak_ape_med":0.17180469984642477,"peak_bias_med":-0.1424442847703115,"peak_hour_err_med":3.4193548387096775,"fleet_nmae":0.16693987202773886,"ovl80_prec":0.4,"ovl80_rec":0.34782608695652173,"ovl80_f1":0.37209302325581395,"ovl100_prec":0.0,"ovl100_rec":0.0,"ovl100_f1":0.0,"ovl80_n":23,"ovl100_n":0,"secs":43.0},{"experiment":"dirty","fold":"winter","tag":"local","strategy":"local","grouping":"shape_kmeans","k":8,"tier":"spike_0.05","n_xfmr":350,"nmae_med":0.37085258960723877,"nmae_iqr":0.1334800347685814,"nrmse_med":0.5021457076072693,"peak_ape_med":0.3919822252806156,"peak_bias_med":0.3169984034780834,"peak_hour_err_med":4.258064516129032,"fleet_nmae":0.36421099305152893,"ovl80_prec":0.08974358974358974,"ovl80_rec":0.6086956521739131,"ovl80_f1":0.1564245810055866,"ovl100_prec":0.0,"ovl100_rec":0.0,"ovl100_f1":0.0,"ovl80_n":23,"ovl100_n":0,"secs":112.6},{"experiment":"dirty","fold":"winter","tag":"cluster","strategy":"cluster","grouping":"shape_kmeans","k":8,"tier":"spike_0.05","n_xfmr":350,"nmae_med":0.2664271593093872,"nmae_iqr":0.0666833370923996,"nrmse_med":0.3360600471496582,"peak_ape_med":0.18685856437490833,"peak_bias_med":-0.00951488604609509,"peak_hour_err_med":3.532258064516129,"fleet_nmae":0.25817814469337463,"ovl80_prec":0.2222222222222222,"ovl80_rec":0.5217391304347826,"ovl80_f1":0.3116883116883117,"ovl100_prec":0.0,"ovl100_rec":0.0,"ovl100_f1":0.0,"ovl80_n":23,"ovl100_n":0,"secs":43.5},{"experiment":"dirty","fold":"winter","tag":"global","strategy":"global","grouping":"shape_kmeans","k":8,"tier":"spike_0.05","n_xfmr":350,"nmae_med":0.2749371349099412,"nmae_iqr":0.07159964716274775,"nrmse_med":0.34036084371776953,"peak_ape_med":0.1802281444806296,"peak_bias_med":0.0032310552282841503,"peak_hour_err_med":3.5,"fleet_nmae":0.26057209674794474,"ovl80_prec":0.23076923076923078,"ovl80_rec":0.5217391304347826,"ovl80_f1":0.32,"ovl100_prec":0.0,"ovl100_rec":0.0,"ovl100_f1":0.0,"ovl80_n":23,"ovl100_n":0,"secs":43.8},{"experiment":"growth","fold":"summer","tag":"seasonal_naive","strategy":"seasonal_naive","grouping":"shape_kmeans(k=8)","k":8,"tier":"ev0","n_xfmr":350,"nmae_med":0.25542300939559937,"nmae_iqr":0.08199504390358925,"nrmse_med":0.3486979007720947,"peak_ape_med":0.20958945060133816,"peak_bias_med":0.03436291401064204,"peak_hour_err_med":2.806451612903226,"fleet_nmae":0.22538626194000244,"ovl80_prec":0.24242424242424243,"ovl80_rec":0.273972602739726,"ovl80_f1":0.2572347266881029,"ovl100_prec":0.23809523809523808,"ovl100_rec":0.2777777777777778,"ovl100_f1":0.2564102564102564,"ovl80_n":146,"ovl100_n":18,"share_over100":0.0429,"med_loading":0.638,"secs":13.7},{"experiment":"growth","fold":"summer","tag":"cluster","strategy":"cluster","grouping":"shape_kmeans(k=8)","k":8,"tier":"ev0","n_xfmr":350,"nmae_med":0.18339881300926208,"nmae_iqr":0.061916351318359375,"nrmse_med":0.24226194620132446,"peak_ape_med":0.1415359366764014,"peak_bias_med":-0.047113085721409126,"peak_hour_err_med":2.032258064516129,"fleet_nmae":0.16438362002372742,"ovl80_prec":0.8461538461538461,"ovl80_rec":0.07534246575342465,"ovl80_f1":0.13836477987421383,"ovl100_prec":0.0,"ovl100_rec":0.0,"ovl100_f1":0.0,"ovl80_n":146,"ovl100_n":18,"share_over100":0.0429,"med_loading":0.638,"secs":27.1},{"experiment":"growth","fold":"summer","tag":"global_cluster","strategy":"global_cluster","grouping":"shape_kmeans(k=8)","k":8,"tier":"ev0","n_xfmr":350,"nmae_med":0.18630534304467028,"nmae_iqr":0.05983478907248471,"nrmse_med":0.24679051174549488,"peak_ape_med":0.14146741964275666,"peak_bias_med":-0.008871589984367257,"peak_hour_err_med":1.967741935483871,"fleet_nmae":0.17107089173926304,"ovl80_prec":0.6,"ovl80_rec":0.0410958904109589,"ovl80_f1":0.07692307692307693,"ovl100_prec":0.0,"ovl100_rec":0.0,"ovl100_f1":0.0,"ovl80_n":146,"ovl100_n":18,"share_over100":0.0429,"med_loading":0.638,"secs":25.0},{"experiment":"growth","fold":"summer","tag":"global_cluster_q90","strategy":"global_cluster_q90","grouping":"shape_kmeans(k=8)","k":8,"tier":"ev0","n_xfmr":350,"nmae_med":0.34747616292376454,"nmae_iqr":0.09499248854718811,"nrmse_med":0.41020589389283857,"peak_ape_med":0.24297350274879587,"peak_bias_med":0.18111021174527975,"peak_hour_err_med":1.967741935483871,"fleet_nmae":0.31748533860279143,"ovl80_prec":0.3533834586466165,"ovl80_rec":0.3219178082191781,"ovl80_f1":0.33691756272401435,"ovl100_prec":0.3333333333333333,"ovl100_rec":0.2222222222222222,"ovl100_f1":0.26666666666666666,"ovl80_n":146,"ovl100_n":18,"share_over100":0.0429,"med_loading":0.638,"secs":40.4},{"experiment":"growth","fold":"summer","tag":"seasonal_naive","strategy":"seasonal_naive","grouping":"shape_kmeans(k=8)","k":8,"tier":"ev15","n_xfmr":350,"nmae_med":0.26572489738464355,"nmae_iqr":0.09491614252328873,"nrmse_med":0.37216466665267944,"peak_ape_med":0.21871131995031912,"peak_bias_med":0.035848266520206964,"peak_hour_err_med":2.5806451612903225,"fleet_nmae":0.23638692498207092,"ovl80_prec":0.3938223938223938,"ovl80_rec":0.41379310344827586,"ovl80_f1":0.4035608308605341,"ovl100_prec":0.3643410852713178,"ovl100_rec":0.373015873015873,"ovl100_f1":0.3686274509803922,"ovl80_n":493,"ovl100_n":126,"share_over100":0.1114,"med_loading":0.69,"secs":13.9},{"experiment":"growth","fold":"summer","tag":"cluster","strategy":"cluster","grouping":"shape_kmeans(k=8)","k":8,"tier":"ev15","n_xfmr":350,"nmae_med":0.19724169373512268,"nmae_iqr":0.06399790197610855,"nrmse_med":0.26420944929122925,"peak_ape_med":0.1569771838689884,"peak_bias_med":-0.06796443905125582,"peak_hour_err_med":1.935483870967742,"fleet_nmae":0.17603999376296997,"ovl80_prec":0.75,"ovl80_rec":0.036511156186612576,"ovl80_f1":0.06963249516441006,"ovl100_prec":0.0,"ovl100_rec":0.0,"ovl100_f1":0.0,"ovl80_n":493,"ovl100_n":126,"share_over100":0.1114,"med_loading":0.69,"secs":27.2},{"experiment":"growth","fold":"summer","tag":"global_cluster","strategy":"global_cluster","grouping":"shape_kmeans(k=8)","k":8,"tier":"ev15","n_xfmr":350,"nmae_med":0.1981340563049928,"nmae_iqr":0.06537115933679291,"nrmse_med":0.2681168070631015,"peak_ape_med":0.15814409999296053,"peak_bias_med":-0.03298947199729732,"peak_hour_err_med":1.903225806451613,"fleet_nmae":0.1810879478629769,"ovl80_prec":0.6923076923076923,"ovl80_rec":0.018255578093306288,"ovl80_f1":0.03557312252964427,"ovl100_prec":0.0,"ovl100_rec":0.0,"ovl100_f1":0.0,"ovl80_n":493,"ovl100_n":126,"share_over100":0.1114,"med_loading":0.69,"secs":25.1},{"experiment":"growth","fold":"summer","tag":"global_cluster_q90","strategy":"global_cluster_q90","grouping":"shape_kmeans(k=8)","k":8,"tier":"ev15","n_xfmr":350,"nmae_med":0.36666562177107376,"nmae_iqr":0.12780386400097765,"nrmse_med":0.4349394811738623,"peak_ape_med":0.24587241803174636,"peak_bias_med":0.18965575700870985,"peak_hour_err_med":1.8870967741935485,"fleet_nmae":0.33511682696793477,"ovl80_prec":0.45686900958466453,"ovl80_rec":0.5801217038539553,"ovl80_f1":0.5111706881143878,"ovl100_prec":0.3442622950819672,"ovl100_rec":0.16666666666666666,"ovl100_f1":0.22459893048128343,"ovl80_n":493,"ovl100_n":126,"share_over100":0.1114,"med_loading":0.69,"secs":40.2},{"experiment":"growth","fold":"summer","tag":"seasonal_naive","strategy":"seasonal_naive","grouping":"shape_kmeans(k=8)","k":8,"tier":"ev30","n_xfmr":350,"nmae_med":0.2846670150756836,"nmae_iqr":0.1075645424425602,"nrmse_med":0.4014357328414917,"peak_ape_med":0.24007069727315777,"peak_bias_med":0.039398487026412646,"peak_hour_err_med":2.403225806451613,"fleet_nmae":0.24942122399806976,"ovl80_prec":0.5004633920296571,"ovl80_rec":0.5182341650671785,"ovl80_f1":0.5091937765205092,"ovl100_prec":0.3660130718954248,"ovl100_rec":0.3875432525951557,"ovl100_f1":0.3764705882352941,"ovl80_n":1042,"ovl100_n":289,"share_over100":0.18,"med_loading":0.75,"secs":13.9},{"experiment":"growth","fold":"summer","tag":"cluster","strategy":"cluster","grouping":"shape_kmeans(k=8)","k":8,"tier":"ev30","n_xfmr":350,"nmae_med":0.21358969807624817,"nmae_iqr":0.09583762660622597,"nrmse_med":0.2859112322330475,"peak_ape_med":0.19021647969531197,"peak_bias_med":-0.11097278756149594,"peak_hour_err_med":1.8387096774193548,"fleet_nmae":0.18650008738040924,"ovl80_prec":0.8529411764705882,"ovl80_rec":0.05566218809980806,"ovl80_f1":0.1045045045045045,"ovl100_prec":0.0,"ovl100_rec":0.0,"ovl100_f1":0.0,"ovl80_n":1042,"ovl100_n":289,"share_over100":0.18,"med_loading":0.75,"secs":27.2},{"experiment":"growth","fold":"summer","tag":"global_cluster","strategy":"global_cluster","grouping":"shape_kmeans(k=8)","k":8,"tier":"ev30","n_xfmr":350,"nmae_med":0.21455019241372242,"nmae_iqr":0.0958410168875399,"nrmse_med":0.2875789010916583,"peak_ape_med":0.1926059479321392,"peak_bias_med":-0.0992469765171437,"peak_hour_err_med":1.8064516129032258,"fleet_nmae":0.19123525062917773,"ovl80_prec":0.7741935483870968,"ovl80_rec":0.023032629558541268,"ovl80_f1":0.04473438956197577,"ovl100_prec":0.0,"ovl100_rec":0.0,"ovl100_f1":0.0,"ovl80_n":1042,"ovl100_n":289,"share_over100":0.18,"med_loading":0.75,"secs":25.0},{"experiment":"growth","fold":"summer","tag":"global_cluster_q90","strategy":"global_cluster_q90","grouping":"shape_kmeans(k=8)","k":8,"tier":"ev30","n_xfmr":350,"nmae_med":0.4000121071761418,"nmae_iqr":0.15964877039288183,"nrmse_med":0.490865811641915,"peak_ape_med":0.25139014342775623,"peak_bias_med":0.19683864623105546,"peak_hour_err_med":1.8387096774193548,"fleet_nmae":0.3616851528674148,"ovl80_prec":0.5612153708668454,"ovl80_rec":0.6026871401151631,"ovl80_f1":0.5812124016658954,"ovl100_prec":0.4931506849315068,"ovl100_rec":0.3737024221453287,"ovl100_f1":0.4251968503937008,"ovl80_n":1042,"ovl100_n":289,"share_over100":0.18,"med_loading":0.75,"secs":40.0},{"experiment":"growth","fold":"summer","tag":"seasonal_naive","strategy":"seasonal_naive","grouping":"shape_kmeans(k=8)","k":8,"tier":"ev50","n_xfmr":350,"nmae_med":0.2978329658508301,"nmae_iqr":0.11914372444152832,"nrmse_med":0.42562299966812134,"peak_ape_med":0.25361083596644385,"peak_bias_med":0.05197873266954576,"peak_hour_err_med":2.225806451612903,"fleet_nmae":0.25959253311157227,"ovl80_prec":0.5327586206896552,"ovl80_rec":0.5440140845070423,"ovl80_f1":0.5383275261324042,"ovl100_prec":0.4363327674023769,"ovl100_rec":0.42833333333333334,"ovl100_f1":0.432296047098402,"ovl80_n":1704,"ovl100_n":600,"share_over100":0.3057,"med_loading":0.846,"secs":13.7},{"experiment":"growth","fold":"summer","tag":"cluster","strategy":"cluster","grouping":"shape_kmeans(k=8)","k":8,"tier":"ev50","n_xfmr":350,"nmae_med":0.21465221047401428,"nmae_iqr":0.10514697432518005,"nrmse_med":0.2995132803916931,"peak_ape_med":0.2111325171070113,"peak_bias_med":-0.12104499156797124,"peak_hour_err_med":1.7741935483870968,"fleet_nmae":0.19567185640335083,"ovl80_prec":0.9411764705882353,"ovl80_rec":0.09389671361502347,"ovl80_f1":0.17075773745997866,"ovl100_prec":1.0,"ovl100_rec":0.008333333333333333,"ovl100_f1":0.01652892561983471,"ovl80_n":1704,"ovl100_n":600,"share_over100":0.3057,"med_loading":0.846,"secs":26.6},{"experiment":"growth","fold":"summer","tag":"global_cluster","strategy":"global_cluster","grouping":"shape_kmeans(k=8)","k":8,"tier":"ev50","n_xfmr":350,"nmae_med":0.2259485293487184,"nmae_iqr":0.09744595232394168,"nrmse_med":0.3052849255153403,"peak_ape_med":0.20894157603252622,"peak_bias_med":-0.11482676169830436,"peak_hour_err_med":1.7741935483870968,"fleet_nmae":0.20470138578089878,"ovl80_prec":0.9333333333333333,"ovl80_rec":0.04929577464788732,"ovl80_f1":0.09364548494983277,"ovl100_prec":0.0,"ovl100_rec":0.0,"ovl100_f1":0.0,"ovl80_n":1704,"ovl100_n":600,"share_over100":0.3057,"med_loading":0.846,"secs":26.5},{"experiment":"growth","fold":"summer","tag":"global_cluster_q90","strategy":"global_cluster_q90","grouping":"shape_kmeans(k=8)","k":8,"tier":"ev50","n_xfmr":350,"nmae_med":0.4300138439022277,"nmae_iqr":0.20190412794077262,"nrmse_med":0.5242313319348568,"peak_ape_med":0.26915535799780005,"peak_bias_med":0.22605412442379066,"peak_hour_err_med":1.7741935483870968,"fleet_nmae":0.3902038806818045,"ovl80_prec":0.526457055214724,"ovl80_rec":0.8057511737089202,"ovl80_f1":0.6368274582560297,"ovl100_prec":0.4786450662739323,"ovl100_rec":0.5416666666666666,"ovl100_f1":0.508209538702111,"ovl80_n":1704,"ovl100_n":600,"share_over100":0.3057,"med_loading":0.846,"secs":41.6},{"experiment":"quantile","fold":"summer","tag":"global_cluster","strategy":"global_cluster","grouping":"shape_kmeans(k=8)","k":8,"tier":"alpha50","n_xfmr":350,"nmae_med":0.21455019241372242,"nmae_iqr":0.0958410168875399,"nrmse_med":0.2875789010916583,"peak_ape_med":0.1926059479321392,"peak_bias_med":-0.0992469765171437,"peak_hour_err_med":1.8064516129032258,"fleet_nmae":0.19123525062917773,"ovl80_prec":0.7741935483870968,"ovl80_rec":0.023032629558541268,"ovl80_f1":0.04473438956197577,"ovl100_prec":0.0,"ovl100_rec":0.0,"ovl100_f1":0.0,"ovl80_n":1042,"ovl100_n":289,"alpha":0.5,"ev":0.3,"secs":25.0},{"experiment":"quantile","fold":"summer","tag":"local","strategy":"local","grouping":"shape_kmeans(k=8)","k":8,"tier":"alpha50","n_xfmr":350,"nmae_med":0.21721535921096802,"nmae_iqr":0.12044188752770424,"nrmse_med":0.2965624928474426,"peak_ape_med":0.19236049841668817,"peak_bias_med":-0.09463985704426323,"peak_hour_err_med":2.0,"fleet_nmae":0.190901517868042,"ovl80_prec":0.7666666666666667,"ovl80_rec":0.1324376199616123,"ovl80_f1":0.22585924713584288,"ovl100_prec":0.5294117647058824,"ovl100_rec":0.031141868512110725,"ovl100_f1":0.058823529411764705,"ovl80_n":1042,"ovl100_n":289,"alpha":0.5,"ev":0.3,"secs":90.3},{"experiment":"quantile","fold":"summer","tag":"global_cluster","strategy":"global_cluster","grouping":"shape_kmeans(k=8)","k":8,"tier":"alpha70","n_xfmr":350,"nmae_med":0.26166906180540017,"nmae_iqr":0.08242345592455308,"nrmse_med":0.33917104248848934,"peak_ape_med":0.1711807578506086,"peak_bias_med":-0.008846074867262122,"peak_hour_err_med":1.8387096774193548,"fleet_nmae":0.2338863044292694,"ovl80_prec":0.7241379310344828,"ovl80_rec":0.060460652591170824,"ovl80_f1":0.11160318866253321,"ovl100_prec":0.0,"ovl100_rec":0.0,"ovl100_f1":0.0,"ovl80_n":1042,"ovl100_n":289,"alpha":0.7,"ev":0.3,"secs":30.9},{"experiment":"quantile","fold":"summer","tag":"local","strategy":"local","grouping":"shape_kmeans(k=8)","k":8,"tier":"alpha70","n_xfmr":350,"nmae_med":0.22903013229370117,"nmae_iqr":0.0891699530184269,"nrmse_med":0.3047325611114502,"peak_ape_med":0.17699073440951085,"peak_bias_med":-0.08597470253270359,"peak_hour_err_med":1.935483870967742,"fleet_nmae":0.20342902839183807,"ovl80_prec":0.7611940298507462,"ovl80_rec":0.14683301343570057,"ovl80_f1":0.24617860016090104,"ovl100_prec":0.6875,"ovl100_rec":0.03806228373702422,"ovl100_f1":0.07213114754098361,"ovl80_n":1042,"ovl100_n":289,"alpha":0.7,"ev":0.3,"secs":95.2},{"experiment":"quantile","fold":"summer","tag":"global_cluster","strategy":"global_cluster","grouping":"shape_kmeans(k=8)","k":8,"tier":"alpha80","n_xfmr":350,"nmae_med":0.3005182035030577,"nmae_iqr":0.10838775297643416,"nrmse_med":0.38078209448225664,"peak_ape_med":0.19140606284019268,"peak_bias_med":0.06166405734662199,"peak_hour_err_med":1.8064516129032258,"fleet_nmae":0.2766201445883123,"ovl80_prec":0.6342105263157894,"ovl80_rec":0.23128598848368523,"ovl80_f1":0.3389592123769339,"ovl100_prec":0.47058823529411764,"ovl100_rec":0.05536332179930796,"ovl100_f1":0.09907120743034056,"ovl80_n":1042,"ovl100_n":289,"alpha":0.8,"ev":0.3,"secs":36.3},{"experiment":"quantile","fold":"summer","tag":"local","strategy":"local","grouping":"shape_kmeans(k=8)","k":8,"tier":"alpha80","n_xfmr":350,"nmae_med":0.26126062870025635,"nmae_iqr":0.1172526516020298,"nrmse_med":0.3367343544960022,"peak_ape_med":0.1688590504908784,"peak_bias_med":-0.012435230527884297,"peak_hour_err_med":1.903225806451613,"fleet_nmae":0.2358560562133789,"ovl80_prec":0.6493506493506493,"ovl80_rec":0.2399232245681382,"ovl80_f1":0.350385423966363,"ovl100_prec":0.5185185185185185,"ovl100_rec":0.09688581314878893,"ovl100_f1":0.16326530612244897,"ovl80_n":1042,"ovl100_n":289,"alpha":0.8,"ev":0.3,"secs":92.1},{"experiment":"quantile","fold":"summer","tag":"global_cluster","strategy":"global_cluster","grouping":"shape_kmeans(k=8)","k":8,"tier":"alpha90","n_xfmr":350,"nmae_med":0.4000121071761418,"nmae_iqr":0.15964877039288183,"nrmse_med":0.490865811641915,"peak_ape_med":0.25139014342775623,"peak_bias_med":0.19683864623105546,"peak_hour_err_med":1.8387096774193548,"fleet_nmae":0.3616851528674148,"ovl80_prec":0.5612153708668454,"ovl80_rec":0.6026871401151631,"ovl80_f1":0.5812124016658954,"ovl100_prec":0.4931506849315068,"ovl100_rec":0.3737024221453287,"ovl100_f1":0.4251968503937008,"ovl80_n":1042,"ovl100_n":289,"alpha":0.9,"ev":0.3,"secs":40.5},{"experiment":"quantile","fold":"summer","tag":"local","strategy":"local","grouping":"shape_kmeans(k=8)","k":8,"tier":"alpha90","n_xfmr":350,"nmae_med":0.3333272933959961,"nmae_iqr":0.18975625932216644,"nrmse_med":0.4041755795478821,"peak_ape_med":0.17241129498448104,"peak_bias_med":0.05100015103591666,"peak_hour_err_med":2.032258064516129,"fleet_nmae":0.29830002784729004,"ovl80_prec":0.6582278481012658,"ovl80_rec":0.4491362763915547,"ovl80_f1":0.5339418140330862,"ovl100_prec":0.4782608695652174,"ovl100_rec":0.2664359861591695,"ovl100_f1":0.3422222222222222,"ovl80_n":1042,"ovl100_n":289,"alpha":0.9,"ev":0.3,"secs":90.1},{"experiment":"quantile","fold":"summer","tag":"global_cluster","strategy":"global_cluster","grouping":"shape_kmeans(k=8)","k":8,"tier":"alpha95","n_xfmr":350,"nmae_med":0.5191340658665728,"nmae_iqr":0.28715644594814593,"nrmse_med":0.6206177471780616,"peak_ape_med":0.3338845743789707,"peak_bias_med":0.3088503478527205,"peak_hour_err_med":1.8387096774193548,"fleet_nmae":0.45419425071695996,"ovl80_prec":0.4235127478753541,"ovl80_rec":0.8608445297504799,"ovl80_f1":0.5677215189873418,"ovl100_prec":0.37209302325581395,"ovl100_rec":0.7750865051903114,"ovl100_f1":0.5028058361391695,"ovl80_n":1042,"ovl100_n":289,"alpha":0.95,"ev":0.3,"secs":50.8},{"experiment":"quantile","fold":"summer","tag":"local","strategy":"local","grouping":"shape_kmeans(k=8)","k":8,"tier":"alpha95","n_xfmr":350,"nmae_med":0.40630167722702026,"nmae_iqr":0.2765875980257988,"nrmse_med":0.4857058525085449,"peak_ape_med":0.1934836916775713,"peak_bias_med":0.11778064718800446,"peak_hour_err_med":2.032258064516129,"fleet_nmae":0.3726237714290619,"ovl80_prec":0.6305263157894737,"ovl80_rec":0.5748560460652591,"ovl80_f1":0.6014056224899599,"ovl100_prec":0.47038327526132406,"ovl100_rec":0.4671280276816609,"ovl100_f1":0.46875,"ovl80_n":1042,"ovl100_n":289,"alpha":0.95,"ev":0.3,"secs":92.4},{"experiment":"quantile","fold":"summer","tag":"global_cluster","strategy":"global_cluster","grouping":"shape_kmeans(k=8)","k":8,"tier":"alpha98","n_xfmr":350,"nmae_med":0.722346440061028,"nmae_iqr":0.5094191663749409,"nrmse_med":0.825554844796557,"peak_ape_med":0.4235533669823448,"peak_bias_med":0.4156389569395903,"peak_hour_err_med":2.032258064516129,"fleet_nmae":0.6105279751952892,"ovl80_prec":0.33131313131313134,"ovl80_rec":0.944337811900192,"ovl80_f1":0.4905284147557328,"ovl100_prec":0.2767762460233298,"ovl100_rec":0.903114186851211,"ovl100_f1":0.4237012987012987,"ovl80_n":1042,"ovl100_n":289,"alpha":0.98,"ev":0.3,"secs":51.5},{"experiment":"quantile","fold":"summer","tag":"local","strategy":"local","grouping":"shape_kmeans(k=8)","k":8,"tier":"alpha98","n_xfmr":350,"nmae_med":0.5134539604187012,"nmae_iqr":0.4149341657757759,"nrmse_med":0.5985013246536255,"peak_ape_med":0.21728656989627426,"peak_bias_med":0.16615047700132335,"peak_hour_err_med":2.0,"fleet_nmae":0.4607982337474823,"ovl80_prec":0.5913173652694611,"ovl80_rec":0.7581573896353166,"ovl80_f1":0.6644238856181666,"ovl100_prec":0.4584323040380047,"ovl100_rec":0.6678200692041523,"ovl100_f1":0.543661971830986,"ovl80_n":1042,"ovl100_n":289,"alpha":0.98,"ev":0.3,"secs":88.9},{"experiment":"solar","fold":"summer","tag":"cluster","strategy":"cluster","grouping":"shape_kmeans(k=8)","k":8,"tier":"pv0_feat","n_xfmr":300,"nmae_med":0.19667258858680725,"nmae_iqr":0.07439056411385536,"nrmse_med":0.2589598298072815,"peak_ape_med":0.14932833864041906,"peak_bias_med":-0.032226427075182716,"peak_hour_err_med":2.0,"fleet_nmae":0.16214895248413086,"ovl80_prec":0.7272727272727273,"ovl80_rec":0.0761904761904762,"ovl80_f1":0.13793103448275862,"ovl100_prec":0.0,"ovl100_rec":0.0,"ovl100_f1":0.0,"ovl80_n":105,"ovl100_n":2,"pv":0.0,"share_over100":0.02,"med_loading":0.6384358406066895,"secs":28.4},{"experiment":"solar","fold":"summer","tag":"global_cluster","strategy":"global_cluster","grouping":"shape_kmeans(k=8)","k":8,"tier":"pv0_feat","n_xfmr":300,"nmae_med":0.1945085133670672,"nmae_iqr":0.06494425717624475,"nrmse_med":0.2566687672611756,"peak_ape_med":0.15017911473587264,"peak_bias_med":-0.0013546372586014876,"peak_hour_err_med":2.0,"fleet_nmae":0.16610557769615716,"ovl80_prec":0.6,"ovl80_rec":0.08571428571428572,"ovl80_f1":0.15,"ovl100_prec":0.0,"ovl100_rec":0.0,"ovl100_f1":0.0,"ovl80_n":105,"ovl100_n":2,"pv":0.0,"share_over100":0.02,"med_loading":0.6384358406066895,"secs":22.7},{"experiment":"solar","fold":"summer","tag":"cluster","strategy":"cluster","grouping":"shape_kmeans(k=8)","k":8,"tier":"pv20_nofeat","n_xfmr":300,"nmae_med":0.20853066444396973,"nmae_iqr":0.09813874214887619,"nrmse_med":0.28241968154907227,"peak_ape_med":0.15212672939824481,"peak_bias_med":-0.03801425430367911,"peak_hour_err_med":2.0,"fleet_nmae":0.17189283668994904,"ovl80_prec":0.7272727272727273,"ovl80_rec":0.11428571428571428,"ovl80_f1":0.19753086419753085,"ovl100_prec":0.0,"ovl100_rec":0.0,"ovl100_f1":0.0,"ovl80_n":70,"ovl100_n":2,"pv":0.2,"share_over100":0.013333333333333334,"med_loading":0.6154183149337769,"secs":25.8},{"experiment":"solar","fold":"summer","tag":"global_cluster","strategy":"global_cluster","grouping":"shape_kmeans(k=8)","k":8,"tier":"pv20_nofeat","n_xfmr":300,"nmae_med":0.21862125447710876,"nmae_iqr":0.08165884858262129,"nrmse_med":0.2870665005091876,"peak_ape_med":0.16345670333130907,"peak_bias_med":0.03176209918595365,"peak_hour_err_med":1.967741935483871,"fleet_nmae":0.18452443337231145,"ovl80_prec":0.5714285714285714,"ovl80_rec":0.11428571428571428,"ovl80_f1":0.19047619047619047,"ovl100_prec":0.0,"ovl100_rec":0.0,"ovl100_f1":0.0,"ovl80_n":70,"ovl100_n":2,"pv":0.2,"share_over100":0.013333333333333334,"med_loading":0.6154183149337769,"secs":25.1},{"experiment":"solar","fold":"summer","tag":"cluster","strategy":"cluster","grouping":"shape_kmeans(k=8)","k":8,"tier":"pv20_feat","n_xfmr":300,"nmae_med":0.20710089802742004,"nmae_iqr":0.09535040333867073,"nrmse_med":0.2829222083091736,"peak_ape_med":0.15022506485148635,"peak_bias_med":-0.03645801506636123,"peak_hour_err_med":1.9193548387096775,"fleet_nmae":0.17193016409873962,"ovl80_prec":0.5789473684210527,"ovl80_rec":0.15714285714285714,"ovl80_f1":0.24719101123595505,"ovl100_prec":0.0,"ovl100_rec":0.0,"ovl100_f1":0.0,"ovl80_n":70,"ovl100_n":2,"pv":0.2,"share_over100":0.013333333333333334,"med_loading":0.6154183149337769,"secs":28.8},{"experiment":"solar","fold":"summer","tag":"global_cluster","strategy":"global_cluster","grouping":"shape_kmeans(k=8)","k":8,"tier":"pv20_feat","n_xfmr":300,"nmae_med":0.21838306345172795,"nmae_iqr":0.08337583240211646,"nrmse_med":0.2855931680773588,"peak_ape_med":0.161474577774352,"peak_bias_med":0.01898162809878023,"peak_hour_err_med":1.903225806451613,"fleet_nmae":0.18449183398671817,"ovl80_prec":0.5714285714285714,"ovl80_rec":0.11428571428571428,"ovl80_f1":0.19047619047619047,"ovl100_prec":0.0,"ovl100_rec":0.0,"ovl100_f1":0.0,"ovl80_n":70,"ovl100_n":2,"pv":0.2,"share_over100":0.013333333333333334,"med_loading":0.6154183149337769,"secs":25.7},{"experiment":"solar","fold":"summer","tag":"cluster","strategy":"cluster","grouping":"shape_kmeans(k=8)","k":8,"tier":"pv40_nofeat","n_xfmr":300,"nmae_med":0.22808516025543213,"nmae_iqr":0.11207344010472298,"nrmse_med":0.315405935049057,"peak_ape_med":0.15585339640177065,"peak_bias_med":-0.03638909355316672,"peak_hour_err_med":1.8709677419354838,"fleet_nmae":0.18464459478855133,"ovl80_prec":0.7272727272727273,"ovl80_rec":0.11428571428571428,"ovl80_f1":0.19753086419753085,"ovl100_prec":0.0,"ovl100_rec":0.0,"ovl100_f1":0.0,"ovl80_n":70,"ovl100_n":1,"pv":0.4,"share_over100":0.01,"med_loading":0.5988646149635315,"secs":27.6},{"experiment":"solar","fold":"summer","tag":"global_cluster","strategy":"global_cluster","grouping":"shape_kmeans(k=8)","k":8,"tier":"pv40_nofeat","n_xfmr":300,"nmae_med":0.2269566980853486,"nmae_iqr":0.09801839702498882,"nrmse_med":0.31602674198208663,"peak_ape_med":0.16127333523055148,"peak_bias_med":0.0057845502078866535,"peak_hour_err_med":1.8548387096774193,"fleet_nmae":0.18949911877519532,"ovl80_prec":0.625,"ovl80_rec":0.14285714285714285,"ovl80_f1":0.23255813953488372,"ovl100_prec":0.0,"ovl100_rec":0.0,"ovl100_f1":0.0,"ovl80_n":70,"ovl100_n":1,"pv":0.4,"share_over100":0.01,"med_loading":0.5988646149635315,"secs":24.4},{"experiment":"solar","fold":"summer","tag":"cluster","strategy":"cluster","grouping":"shape_kmeans(k=8)","k":8,"tier":"pv40_feat","n_xfmr":300,"nmae_med":0.22123992443084717,"nmae_iqr":0.11704409494996071,"nrmse_med":0.3114003837108612,"peak_ape_med":0.1564264936342595,"peak_bias_med":-0.035049545916638544,"peak_hour_err_med":1.8225806451612903,"fleet_nmae":0.18355949223041534,"ovl80_prec":0.6666666666666666,"ovl80_rec":0.11428571428571428,"ovl80_f1":0.1951219512195122,"ovl100_prec":0.0,"ovl100_rec":0.0,"ovl100_f1":0.0,"ovl80_n":70,"ovl100_n":1,"pv":0.4,"share_over100":0.01,"med_loading":0.5988646149635315,"secs":27.3},{"experiment":"solar","fold":"summer","tag":"global_cluster","strategy":"global_cluster","grouping":"shape_kmeans(k=8)","k":8,"tier":"pv40_feat","n_xfmr":300,"nmae_med":0.22963050522418757,"nmae_iqr":0.09783349957456117,"nrmse_med":0.31569576728378823,"peak_ape_med":0.16284791326412845,"peak_bias_med":0.016080487603803845,"peak_hour_err_med":1.8387096774193548,"fleet_nmae":0.19239393824868004,"ovl80_prec":0.6470588235294118,"ovl80_rec":0.15714285714285714,"ovl80_f1":0.25287356321839083,"ovl100_prec":0.0,"ovl100_rec":0.0,"ovl100_f1":0.0,"ovl80_n":70,"ovl100_n":1,"pv":0.4,"share_over100":0.01,"med_loading":0.5988646149635315,"secs":24.9},{"experiment":"solar","fold":"summer","tag":"cluster","strategy":"cluster","grouping":"shape_kmeans(k=8)","k":8,"tier":"pv80_nofeat","n_xfmr":300,"nmae_med":0.2549544870853424,"nmae_iqr":0.10974709689617157,"nrmse_med":0.3530578017234802,"peak_ape_med":0.16305650081185083,"peak_bias_med":-0.04832671649543749,"peak_hour_err_med":1.5806451612903225,"fleet_nmae":0.1969655156135559,"ovl80_prec":0.6363636363636364,"ovl80_rec":0.21875,"ovl80_f1":0.32558139534883723,"ovl100_prec":0.0,"ovl100_rec":0.0,"ovl100_f1":0.0,"ovl80_n":32,"ovl100_n":1,"pv":0.8,"share_over100":0.006666666666666667,"med_loading":0.5889934301376343,"secs":28.1},{"experiment":"solar","fold":"summer","tag":"global_cluster","strategy":"global_cluster","grouping":"shape_kmeans(k=8)","k":8,"tier":"pv80_nofeat","n_xfmr":300,"nmae_med":0.25160449855534867,"nmae_iqr":0.10493664635983091,"nrmse_med":0.3469706440780056,"peak_ape_med":0.1628374547961084,"peak_bias_med":0.022880138148659666,"peak_hour_err_med":1.6129032258064515,"fleet_nmae":0.197228321878201,"ovl80_prec":0.5833333333333334,"ovl80_rec":0.21875,"ovl80_f1":0.3181818181818182,"ovl100_prec":0.0,"ovl100_rec":0.0,"ovl100_f1":0.0,"ovl80_n":32,"ovl100_n":1,"pv":0.8,"share_over100":0.006666666666666667,"med_loading":0.5889934301376343,"secs":25.2},{"experiment":"solar","fold":"summer","tag":"cluster","strategy":"cluster","grouping":"shape_kmeans(k=8)","k":8,"tier":"pv80_feat","n_xfmr":300,"nmae_med":0.2583429515361786,"nmae_iqr":0.11267668008804321,"nrmse_med":0.3501048684120178,"peak_ape_med":0.15984496743523424,"peak_bias_med":-0.04056060874098612,"peak_hour_err_med":1.5483870967741935,"fleet_nmae":0.19590938091278076,"ovl80_prec":0.5714285714285714,"ovl80_rec":0.25,"ovl80_f1":0.34782608695652173,"ovl100_prec":0.0,"ovl100_rec":0.0,"ovl100_f1":0.0,"ovl80_n":32,"ovl100_n":1,"pv":0.8,"share_over100":0.006666666666666667,"med_loading":0.5889934301376343,"secs":27.2},{"experiment":"solar","fold":"summer","tag":"global_cluster","strategy":"global_cluster","grouping":"shape_kmeans(k=8)","k":8,"tier":"pv80_feat","n_xfmr":300,"nmae_med":0.252098696399354,"nmae_iqr":0.10714001667821949,"nrmse_med":0.34395649524803007,"peak_ape_med":0.15957050172191578,"peak_bias_med":0.006212484880932031,"peak_hour_err_med":1.6774193548387097,"fleet_nmae":0.19738558613889814,"ovl80_prec":0.6428571428571429,"ovl80_rec":0.28125,"ovl80_f1":0.391304347826087,"ovl100_prec":0.0,"ovl100_rec":0.0,"ovl100_f1":0.0,"ovl80_n":32,"ovl100_n":1,"pv":0.8,"share_over100":0.006666666666666667,"med_loading":0.5889934301376343,"secs":26.6},{"experiment":"storage","fold":"winter","tag":"cluster","strategy":"cluster","grouping":"shape_kmeans(k=8)","k":8,"tier":"bess0","n_xfmr":300,"nmae_med":0.17923280596733093,"nmae_iqr":0.10137345269322395,"nrmse_med":0.26402363181114197,"peak_ape_med":0.19957494813828697,"peak_bias_med":-0.1732068261837647,"peak_hour_err_med":3.3225806451612905,"fleet_nmae":0.14792874455451965,"ovl80_prec":0.7692307692307693,"ovl80_rec":0.3333333333333333,"ovl80_f1":0.46511627906976744,"ovl100_prec":0.0,"ovl100_rec":0.0,"ovl100_f1":0.0,"ovl80_n":30,"ovl100_n":0,"bess":0.0,"share_over100":0.02,"med_loading":0.6384358406066895,"secs":44.7},{"experiment":"storage","fold":"winter","tag":"global_cluster","strategy":"global_cluster","grouping":"shape_kmeans(k=8)","k":8,"tier":"bess0","n_xfmr":300,"nmae_med":0.1786604077863062,"nmae_iqr":0.10081444579391244,"nrmse_med":0.263914125756341,"peak_ape_med":0.18566152170506836,"peak_bias_med":-0.16254968459729358,"peak_hour_err_med":3.225806451612903,"fleet_nmae":0.1532495513590541,"ovl80_prec":0.8,"ovl80_rec":0.26666666666666666,"ovl80_f1":0.4,"ovl100_prec":0.0,"ovl100_rec":0.0,"ovl100_f1":0.0,"ovl80_n":30,"ovl100_n":0,"bess":0.0,"share_over100":0.02,"med_loading":0.6384358406066895,"secs":60.1},{"experiment":"storage","fold":"winter","tag":"cluster","strategy":"cluster","grouping":"shape_kmeans(k=8)","k":8,"tier":"bess30","n_xfmr":300,"nmae_med":0.1756574809551239,"nmae_iqr":0.09764710813760757,"nrmse_med":0.264344722032547,"peak_ape_med":0.12467768253120612,"peak_bias_med":-0.08405911504110741,"peak_hour_err_med":2.8548387096774195,"fleet_nmae":0.1460465043783188,"ovl80_prec":0.7142857142857143,"ovl80_rec":0.2222222222222222,"ovl80_f1":0.3389830508474576,"ovl100_prec":0.0,"ovl100_rec":0.0,"ovl100_f1":0.0,"ovl80_n":45,"ovl100_n":0,"bess":0.3,"share_over100":0.02666666666666667,"med_loading":0.6540355682373047,"secs":56.5},{"experiment":"storage","fold":"winter","tag":"global_cluster","strategy":"global_cluster","grouping":"shape_kmeans(k=8)","k":8,"tier":"bess30","n_xfmr":300,"nmae_med":0.17756321034687153,"nmae_iqr":0.10039349278384027,"nrmse_med":0.26172470098188316,"peak_ape_med":0.12394036580788947,"peak_bias_med":-0.09933655895692564,"peak_hour_err_med":2.838709677419355,"fleet_nmae":0.15025878202039825,"ovl80_prec":0.8,"ovl80_rec":0.08888888888888889,"ovl80_f1":0.16,"ovl100_prec":0.0,"ovl100_rec":0.0,"ovl100_f1":0.0,"ovl80_n":45,"ovl100_n":0,"bess":0.3,"share_over100":0.02666666666666667,"med_loading":0.6540355682373047,"secs":43.2},{"experiment":"storage","fold":"winter","tag":"cluster","strategy":"cluster","grouping":"shape_kmeans(k=8)","k":8,"tier":"bess60","n_xfmr":300,"nmae_med":0.1729351133108139,"nmae_iqr":0.09337392076849937,"nrmse_med":0.26758134365081787,"peak_ape_med":0.0636144838025493,"peak_bias_med":-0.025349206790128993,"peak_hour_err_med":0.7903225806451613,"fleet_nmae":0.1436445713043213,"ovl80_prec":0.9130434782608695,"ovl80_rec":0.6933962264150944,"ovl80_f1":0.7882037533512064,"ovl100_prec":0.75,"ovl100_rec":0.47619047619047616,"ovl100_f1":0.5825242718446602,"ovl80_n":212,"ovl100_n":63,"bess":0.6,"share_over100":0.056666666666666664,"med_loading":0.6894022822380066,"secs":52.6},{"experiment":"storage","fold":"winter","tag":"global_cluster","strategy":"global_cluster","grouping":"shape_kmeans(k=8)","k":8,"tier":"bess60","n_xfmr":300,"nmae_med":0.17742333031749702,"nmae_iqr":0.09665989002801958,"nrmse_med":0.26576385379776435,"peak_ape_med":0.062479349276889244,"peak_bias_med":-0.02035296541036831,"peak_hour_err_med":0.9032258064516129,"fleet_nmae":0.14941348661315543,"ovl80_prec":0.926829268292683,"ovl80_rec":0.7169811320754716,"ovl80_f1":0.8085106382978723,"ovl100_prec":0.8048780487804879,"ovl100_rec":0.5238095238095238,"ovl100_f1":0.6346153846153846,"ovl80_n":212,"ovl100_n":63,"bess":0.6,"share_over100":0.056666666666666664,"med_loading":0.6894022822380066,"secs":65.5}],"faq":{"stratified":{"winter":{"homes":[{"bucket":"1","n":221,"nmae_med":0.2223,"peak_ape_med":0.2347,"load_factor":0.507099986076355,"cv":0.34049999713897705},{"bucket":"2","n":102,"nmae_med":0.1977,"peak_ape_med":0.2545,"load_factor":0.5196999907493591,"cv":0.3158999979496002},{"bucket":"3-4","n":101,"nmae_med":0.1754,"peak_ape_med":0.2099,"load_factor":0.5508000254631042,"cv":0.27869999408721924},{"bucket":"5+","n":76,"nmae_med":0.1416,"peak_ape_med":0.1681,"load_factor":0.5842999815940857,"cv":0.27000001072883606}],"res_share":[{"bucket":"0 (non-res)","n":63,"nmae_med":0.0598,"peak_ape_med":0.0566,"load_factor":0.6869999766349792,"cv":0.30390000343322754},{"bucket":"1-50%","n":2,"nmae_med":0.132,"peak_ape_med":0.1191,"load_factor":0.6552000045776367,"cv":0.28630000352859497},{"bucket":"50-99%","n":7,"nmae_med":0.1366,"peak_ape_med":0.1531,"load_factor":0.6115000247955322,"cv":0.23909999430179596},{"bucket":"100% res","n":428,"nmae_med":0.1981,"peak_ape_med":0.2345,"load_factor":0.5270000100135803,"cv":0.3093000054359436}],"volatility":[{"bucket":"calmest 25%","n":125,"nmae_med":0.1643,"peak_ape_med":0.1676,"load_factor":0.5929999947547913,"cv":0.2150000035762787},{"bucket":"2nd","n":125,"nmae_med":0.1679,"peak_ape_med":0.194,"load_factor":0.5608999729156494,"cv":0.28870001435279846},{"bucket":"3rd","n":125,"nmae_med":0.192,"peak_ape_med":0.2541,"load_factor":0.5196999907493591,"cv":0.3319000005722046},{"bucket":"most volatile 25%","n":125,"nmae_med":0.23,"peak_ape_med":0.2666,"load_factor":0.4546999931335449,"cv":0.4546000063419342}],"nameplate":[{"bucket":"<=15","n":132,"nmae_med":0.2272,"peak_ape_med":0.2818,"load_factor":0.4546999931335449,"cv":0.34380000829696655},{"bucket":"25","n":217,"nmae_med":0.1921,"peak_ape_med":0.2403,"load_factor":0.5281000137329102,"cv":0.3073999881744385},{"bucket":"50","n":95,"nmae_med":0.1519,"peak_ape_med":0.1676,"load_factor":0.5881999731063843,"cv":0.2732999920845032},{"bucket":">50","n":56,"nmae_med":0.1113,"peak_ape_med":0.1003,"load_factor":0.6380000114440918,"cv":0.3001999855041504}],"corr":{"n_cust":-0.284,"res_share":0.57,"cv_daily_peak":0.35,"load_factor":-0.812,"mean_kva":-0.536,"kva":-0.482}},"summer":{"homes":[{"bucket":"1","n":221,"nmae_med":0.2159,"peak_ape_med":0.1773,"load_factor":0.507099986076355,"cv":0.34049999713897705},{"bucket":"2","n":102,"nmae_med":0.1979,"peak_ape_med":0.166,"load_factor":0.5196999907493591,"cv":0.3158999979496002},{"bucket":"3-4","n":101,"nmae_med":0.1801,"peak_ape_med":0.146,"load_factor":0.5508000254631042,"cv":0.27869999408721924},{"bucket":"5+","n":76,"nmae_med":0.164,"peak_ape_med":0.1267,"load_factor":0.5842999815940857,"cv":0.27000001072883606}],"res_share":[{"bucket":"0 (non-res)","n":63,"nmae_med":0.1105,"peak_ape_med":0.088,"load_factor":0.6869999766349792,"cv":0.30390000343322754},{"bucket":"1-50%","n":2,"nmae_med":0.1547,"peak_ape_med":0.1191,"load_factor":0.6552000045776367,"cv":0.28630000352859497},{"bucket":"50-99%","n":7,"nmae_med":0.1427,"peak_ape_med":0.1171,"load_factor":0.6115000247955322,"cv":0.23909999430179596},{"bucket":"100% res","n":428,"nmae_med":0.1981,"peak_ape_med":0.1574,"load_factor":0.5270000100135803,"cv":0.3093000054359436}],"volatility":[{"bucket":"calmest 25%","n":125,"nmae_med":0.1716,"peak_ape_med":0.1226,"load_factor":0.5929999947547913,"cv":0.2150000035762787},{"bucket":"2nd","n":125,"nmae_med":0.1747,"peak_ape_med":0.13,"load_factor":0.5608999729156494,"cv":0.28870001435279846},{"bucket":"3rd","n":125,"nmae_med":0.1844,"peak_ape_med":0.1611,"load_factor":0.5196999907493591,"cv":0.3319000005722046},{"bucket":"most volatile 25%","n":125,"nmae_med":0.2224,"peak_ape_med":0.2389,"load_factor":0.4546999931335449,"cv":0.4546000063419342}],"nameplate":[{"bucket":"<=15","n":132,"nmae_med":0.2287,"peak_ape_med":0.2386,"load_factor":0.4546999931335449,"cv":0.34380000829696655},{"bucket":"25","n":217,"nmae_med":0.1923,"peak_ape_med":0.1563,"load_factor":0.5281000137329102,"cv":0.3073999881744385},{"bucket":"50","n":95,"nmae_med":0.1636,"peak_ape_med":0.1253,"load_factor":0.5881999731063843,"cv":0.2732999920845032},{"bucket":">50","n":56,"nmae_med":0.1441,"peak_ape_med":0.1083,"load_factor":0.6380000114440918,"cv":0.3001999855041504}],"corr":{"n_cust":-0.278,"res_share":0.468,"cv_daily_peak":0.338,"load_factor":-0.766,"mean_kva":-0.49,"kva":-0.406}}},"seasonal_shape":{"winter":{"weekday":[0.7309,0.6534,0.6396,0.6564,0.7161,0.8246,1.0188,1.1047,1.1192,1.0982,1.1073,1.0729,1.0406,0.9928,0.9616,0.9931,1.0713,1.1905,1.2642,1.2612,1.2303,1.1273,0.9585,0.8037],"weekend":[0.7235,0.6407,0.6188,0.6203,0.6533,0.7046,0.8329,0.9489,1.0557,1.085,1.078,1.0432,1.0099,0.9514,0.9298,0.9389,0.9939,1.1195,1.2197,1.2521,1.2181,1.1129,0.9717,0.8236]},"spring":{"weekday":[0.6,0.5535,0.5412,0.5742,0.6554,0.7806,0.9125,0.9627,0.9786,1.0154,1.0329,1.0371,1.0231,1.029,1.06,1.1209,1.1735,1.1958,1.1734,1.1661,1.1257,0.9776,0.7918,0.672],"weekend":[0.5957,0.5343,0.5161,0.5297,0.5599,0.6298,0.7477,0.8634,0.9449,0.9841,0.9795,0.9933,0.9898,0.9884,1.0145,1.0759,1.1525,1.1707,1.1714,1.1699,1.1514,1.009,0.8132,0.6956]},"summer":{"weekday":[0.7541,0.6928,0.6587,0.6837,0.7507,0.8798,1.0078,1.0943,1.17,1.2701,1.3244,1.38,1.4058,1.4664,1.5431,1.6582,1.7412,1.6856,1.5735,1.4959,1.3766,1.1547,0.9606,0.84],"weekend":[0.7169,0.6566,0.6229,0.6154,0.6332,0.7085,0.8548,1.0226,1.1407,1.2232,1.2711,1.3203,1.3377,1.4071,1.5064,1.603,1.6924,1.6559,1.5769,1.5067,1.3947,1.1629,0.968,0.8273]},"fall":{"weekday":[0.6094,0.5606,0.5529,0.5798,0.6528,0.7888,0.9233,0.9727,1.0006,1.0346,1.0757,1.0932,1.0986,1.1153,1.1451,1.1903,1.2553,1.2715,1.2665,1.2319,1.1495,0.9769,0.8059,0.6898],"weekend":[0.6184,0.5638,0.5399,0.5486,0.5847,0.6619,0.7641,0.8713,0.9194,0.961,0.9871,1.0113,0.9938,0.9909,1.0071,1.0276,1.0924,1.1406,1.1627,1.1708,1.1195,0.9467,0.7877,0.6592]}},"peak_month_share":{"1":0.19,"2":0.0393,"3":0.016,"4":0.0007,"5":0.0993,"6":0.214,"7":0.2393,"8":0.096,"9":0.064,"10":0.02,"11":0.002,"12":0.0193},"peak_hour_share":{"0":0.0,"1":0.0,"2":0.002,"3":0.0033,"4":0.0067,"5":0.0087,"6":0.0533,"7":0.0367,"8":0.0093,"9":0.0207,"10":0.0267,"11":0.0213,"12":0.0127,"13":0.0173,"14":0.0687,"15":0.1387,"16":0.256,"17":0.1293,"18":0.082,"19":0.0487,"20":0.024,"21":0.03,"22":0.0033,"23":0.0007},"pred_cols":{"winter":{"cols":["row","col","pred","truth"],"n":372000},"summer":{"cols":["row","col","pred","truth"],"n":372000}},"temp_response":[{"tb":"<0C","hours":811,"mean_norm_load":1.0180000066757202},{"tb":"0-10C","hours":2266,"mean_norm_load":0.8889999985694885},{"tb":"10-20C","hours":2208,"mean_norm_load":0.8140000104904175},{"tb":"20-25C","hours":1898,"mean_norm_load":0.9700000286102295},{"tb":"25-30C","hours":1107,"mean_norm_load":1.3739999532699585},{"tb":">30C","hours":470,"mean_norm_load":1.6160000562667847}],"load_model_test":{"rural":{"n_xfmr":189,"ratio_mean":1.1656,"ratio_by_loading":{"lightest 20%":1.2521,"2nd":1.1814,"3rd":1.1476,"4th":1.1275,"heaviest 20%":1.0969},"corr_hourly":0.99922},"urban":{"n_xfmr":210,"ratio_mean":1.1448,"ratio_by_loading":{"lightest 20%":1.2039,"2nd":1.1573,"3rd":1.1337,"4th":1.1115,"heaviest 20%":1.0931},"corr_hourly":0.99897}},"fleet":{"n":1500,"homes_mean":2.58,"share_single_home":0.4513,"share_nonres":0.1673,"share_pure_res":0.8327,"kva_median":25.0,"util_median":63.72,"util_p95":93.54,"share_over_100":0.024,"share_over_80":0.2,"cv_median":0.3016,"cv_p90":0.4875,"load_factor_median":0.5516}},"extra":{"daily_register":{"fleet_load_factor":0.5802,"peak_ape_median":0.1318,"peak_ape_p90":0.3616},"daily_register_known_lf":{"peak_ape_median":0.0949,"peak_ape_p90":0.3035},"daily_register_screen":{"precision":0.718,"recall":0.366,"f1":0.485,"events":153},"winter_peak_hour":19,"winter_peak_level":1.259,"winter_min_level":0.634,"winter_peak_to_trough":1.99,"summer_peak_hour":16,"summer_peak_level":1.727,"summer_min_level":0.649,"summer_peak_to_trough":2.66,"share_peak_summer":0.7127,"share_peak_winter":0.2667,"coincidence":[{"homes":"1","n":677,"cv_daily_peak":0.3642},{"homes":"2","n":283,"cv_daily_peak":0.3214},{"homes":"3-4","n":300,"cv_daily_peak":0.276},{"homes":"5-8","n":211,"cv_daily_peak":0.2628},{"homes":"9-99","n":29,"cv_daily_peak":0.279}]},"fit":{"rural":{"region":"rural","n_xfmr":189,"a":0.2166,"b":0.3039,"c":0.0658,"flat_factor":1.1686,"fit":{"mape":3.938,"rmse":0.1537},"flat":{"mape":5.296,"rmse":0.4431},"peak_bias_fit":0.302,"peak_bias_flat":10.324},"urban":{"region":"urban","n_xfmr":210,"a":0.1794,"b":0.3722,"c":0.0667,"flat_factor":1.1448,"fit":{"mape":2.811,"rmse":0.2776},"flat":{"mape":4.223,"rmse":0.5471},"peak_bias_fit":1.537,"peak_bias_flat":7.5}},"kva":[{"region":"rural","variant":"fitted","hourly_mape":3.94,"peak_bias_pct":0.41,"n_over_100":3,"n_over_80":44,"n_over_100_true":3,"n_over_80_true":43,"n":189},{"region":"rural","variant":"flat factor","hourly_mape":5.3,"peak_bias_pct":10.45,"n_over_100":23,"n_over_80":68,"n_over_100_true":3,"n_over_80_true":43,"n":189},{"region":"rural","variant":"summed kW","hourly_mape":13.96,"peak_bias_pct":-5.49,"n_over_100":0,"n_over_80":39,"n_over_100_true":3,"n_over_80_true":43,"n":189},{"region":"urban","variant":"fitted","hourly_mape":2.81,"peak_bias_pct":1.61,"n_over_100":5,"n_over_80":38,"n_over_100_true":5,"n_over_80_true":32,"n":210},{"region":"urban","variant":"flat factor","hourly_mape":4.22,"peak_bias_pct":7.58,"n_over_100":7,"n_over_80":57,"n_over_100_true":5,"n_over_80_true":32,"n":210},{"region":"urban","variant":"summed kW","hourly_mape":12.22,"peak_bias_pct":-6.03,"n_over_100":3,"n_over_80":23,"n_over_100_true":5,"n_over_80_true":32,"n":210}]};
+const tip = document.getElementById('tip');
+const COL = ['var(--s1)','var(--s2)','var(--s3)','var(--s4)','var(--s5)'];
+const MK  = ['circle','square','triangle','diamond','cross'];
+const DASH= ['', '5 2', '1.5 2', '7 2 1.5 2', '3 1.5 1 1.5'];
+const fmt = (v,d=1)=> (v===null||v===undefined||Number.isNaN(v))?'—':(+v).toFixed(d);
+const pct = (v,d=1)=> fmt(100*v,d);
+const esc = s => String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+function showTip(e, html){ tip.innerHTML = html; tip.style.opacity = 1;
+  const r = tip.getBoundingClientRect();
+  let x = e.clientX + 14, y = e.clientY - r.height - 10;
+  if (x + r.width > innerWidth - 8) x = e.clientX - r.width - 14;
+  if (y < 4) y = e.clientY + 18;
+  tip.style.left = x+'px'; tip.style.top = y+'px';
+}
+function hideTip(){ tip.style.opacity = 0; }
+addEventListener('scroll', hideTip, {passive:true});
+
+/* --------------------------------------------------- responsive chart registry */
+const CHARTS=[];
+function sizeOf(host, min, max){
+  const w = host.clientWidth || host.parentElement?.clientWidth || 560;
+  return Math.round(Math.max(min, Math.min(max, w)));
+}
+function register(host, draw){ CHARTS.push(draw); draw(); }
+let _rt; addEventListener('resize', ()=>{ clearTimeout(_rt);
+  _rt=setTimeout(()=>CHARTS.forEach(f=>{try{f()}catch(e){}}), 180); }, {passive:true});
+
+/* ---------------------------------------------------------------- svg helpers */
+function mkSvg(w,h){
+  const s = document.createElementNS('http://www.w3.org/2000/svg','svg');
+  s.setAttribute('viewBox',`0 0 ${w} ${h}`); s.setAttribute('role','img');
+  return s;
+}
+function el(tag, attrs, parent){
+  const n = document.createElementNS('http://www.w3.org/2000/svg',tag);
+  for (const k in attrs) if (attrs[k]!==null && attrs[k]!==undefined) n.setAttribute(k,attrs[k]);
+  if (parent) parent.appendChild(n);
+  return n;
+}
+function marker(g, kind, x, y, r, color){
+  const st = {fill:color, stroke:'var(--surface)', 'stroke-width':1.6};
+  if (kind==='square') return el('rect',{x:x-r,y:y-r,width:2*r,height:2*r,rx:1,style:css(st)},g);
+  if (kind==='triangle') return el('polygon',{points:`${x},${y-r*1.15} ${x+r*1.1},${y+r*0.8} ${x-r*1.1},${y+r*0.8}`,style:css(st)},g);
+  if (kind==='diamond') return el('polygon',{points:`${x},${y-r*1.25} ${x+r*1.15},${y} ${x},${y+r*1.25} ${x-r*1.15},${y}`,style:css(st)},g);
+  if (kind==='cross') return el('path',{d:`M${x-r},${y-r}L${x+r},${y+r}M${x-r},${y+r}L${x+r},${y-r}`,
+      style:css({stroke:color,'stroke-width':2.4,fill:'none','stroke-linecap':'round'})},g);
+  return el('circle',{cx:x,cy:y,r:r,style:css(st)},g);
+}
+const css = o => Object.entries(o).map(([k,v])=>`${k}:${v}`).join(';');
+function nice(max, min=0){
+  const span = max-min || 1, p = Math.pow(10, Math.floor(Math.log10(span)));
+  const step = [1,2,2.5,5,10].find(s=>span/(s*p)<=5.5)*p;
+  return {lo: Math.floor(min/step)*step, hi: Math.ceil(max/step)*step, step};
+}
+function ticks(lo,hi,step){ const o=[]; for(let v=lo;v<=hi+1e-9;v+=step) o.push(+v.toFixed(10)); return o; }
+function legend(host, items){
+  const d = document.createElement('div'); d.className='legend';
+  d.innerHTML = items.map((it,i)=>`<span><i class="${it.dot?'dot':''}" style="background:${it.color}"></i>${esc(it.name)}</span>`).join('');
+  host.appendChild(d);
+}
+
+/* ------------------------------------------------------------- line / scatter */
+function lineChart(host, o){
+  host.innerHTML='';
+  if (o.series.length>1) legend(host, o.series.map((s,i)=>({name:s.name,color:s.color||COL[i%5],dot:true})));
+  const W=sizeOf(host, o.wMin||420, o.wMax||1040), H=o.h||250, m={t:10,r:o.mr||14,b:40,l:o.ml||48};
+  const s = mkSvg(W,H); s.style.width=W+'px'; s.style.maxWidth='none'; host.appendChild(s);
+  const xs = o.series.flatMap(q=>q.pts.map(p=>p[0])), ys = o.series.flatMap(q=>q.pts.map(p=>p[1]));
+  const xr = o.xBand ? null : nice(Math.max(...xs), o.x0!==undefined?o.x0:Math.min(...xs));
+  const yr = nice(o.yMax!==undefined?o.yMax:Math.max(...ys), o.y0!==undefined?o.y0:Math.min(...ys));
+  const X = o.xLog ? (v=>m.l+(Math.log2(v)-Math.log2(o.xTicks[0]))/(Math.log2(o.xTicks[o.xTicks.length-1])-Math.log2(o.xTicks[0]))*(W-m.l-m.r))
+                   : (v=>m.l+(v-xr.lo)/(xr.hi-xr.lo||1)*(W-m.l-m.r));
+  const Y = v => H-m.b-(v-yr.lo)/(yr.hi-yr.lo||1)*(H-m.t-m.b);
+  ticks(yr.lo,yr.hi,yr.step).forEach(v=>{
+    el('line',{x1:m.l,x2:W-m.r,y1:Y(v),y2:Y(v),class:'gl'},s);
+    el('text',{x:m.l-7,y:Y(v)+3.5,'text-anchor':'end',class:'tk'},s).textContent=o.yFmt?o.yFmt(v):v;
+  });
+  const xt = o.xTicks || ticks(xr.lo,xr.hi,xr.step);
+  xt.forEach(v=>el('text',{x:X(v),y:H-m.b+15,'text-anchor':'middle',class:'tk'},s).textContent=o.xFmt?o.xFmt(v):v);
+  el('line',{x1:m.l,x2:W-m.r,y1:H-m.b,y2:H-m.b,class:'ax'},s);
+  (o.rules||[]).forEach(r=>{
+    el('line',{x1:m.l,x2:W-m.r,y1:Y(r.y),y2:Y(r.y),style:css({stroke:'var(--line-2)','stroke-dasharray':'4 3','stroke-width':1})},s);
+    el('text',{x:W-m.r,y:Y(r.y)-4,'text-anchor':'end',class:'tk'},s).textContent=r.label;
+  });
+  o.series.forEach((q,i)=>{
+    const c=q.color||COL[i%5];
+    if (q.pts.length>1 && !q.noLine)
+      el('path',{d:'M'+q.pts.map(p=>`${X(p[0])},${Y(p[1])}`).join('L'),
+        style:css({fill:'none',stroke:c,'stroke-width':2,'stroke-dasharray':DASH[i%5],'stroke-linejoin':'round','stroke-linecap':'round'})},s);
+    q.pts.forEach(p=>{
+      const g=el('g',{},s); marker(g, q.marker||MK[i%5], X(p[0]), Y(p[1]), q.pts.length>14?3:4.4, c);
+      el('circle',{cx:X(p[0]),cy:Y(p[1]),r:11,style:'fill:transparent;cursor:crosshair'},g)
+        .addEventListener('mousemove',e=>showTip(e,
+          `<b>${esc(q.name)}</b><br>${o.xName||'x'}: ${o.xFmt?o.xFmt(p[0]):p[0]}<br>${o.yName||'y'}: ${o.yFmt?o.yFmt(p[1]):p[1]}${p[2]?'<br>'+p[2]:''}`));
+      g.addEventListener('mouseleave',hideTip);
+    });
+    if (q.label){ const last=q.pts[q.pts.length-1];
+      el('text',{x:X(last[0])+7,y:Y(last[1])+3.5,class:'dl',style:`fill:${c}`},s).textContent=q.label; }
+  });
+  if (o.yLabel) el('text',{x:m.l-38,y:m.t+2,class:'al',transform:`rotate(-90 ${m.l-38} ${m.t+2})`,
+    'text-anchor':'end'},s).textContent=o.yLabel;
+  if (o.xLabel) el('text',{x:(m.l+W-m.r)/2,y:H-4,'text-anchor':'middle',class:'al'},s).textContent=o.xLabel;
+}
+
+/* -------------------------------------------------------------------- bars */
+function barChart(host, o){
+  host.innerHTML='';
+  const grp = o.series.length>1;
+  if (grp) legend(host, o.series.map((q,i)=>({name:q.name,color:q.color||COL[i%5]})));
+  const n=o.cats.length;
+  const W=sizeOf(host, o.horizontal?(o.wMin||500):(o.wMin||420), o.wMax||1040);
+  const H=o.h||(o.horizontal? 40+n*(grp?o.series.length*17+13:27) : 250);
+  const m={t:12,r:o.horizontal?52:14,b:o.horizontal?34:(o.rot?62:40),
+           l:o.horizontal?Math.min(o.ml||130, Math.round(W*0.38)):(o.ml||48)};
+  const s=mkSvg(W,H); s.style.width=W+'px'; s.style.maxWidth='none'; host.appendChild(s);
+  const vals=o.series.flatMap(q=>q.vals.filter(v=>v!==null));
+  const r=nice(o.vMax!==undefined?o.vMax:Math.max(...vals), Math.min(0,...vals));
+  if (o.horizontal){
+    const V=v=>m.l+(v-r.lo)/(r.hi-r.lo)*(W-m.l-m.r), band=(H-m.t-m.b)/n;
+    ticks(r.lo,r.hi,r.step).forEach(v=>{
+      el('line',{x1:V(v),x2:V(v),y1:m.t,y2:H-m.b,class:'gl'},s);
+      el('text',{x:V(v),y:H-m.b+15,'text-anchor':'middle',class:'tk'},s).textContent=o.vFmt?o.vFmt(v):v;
+    });
+    el('line',{x1:V(0),x2:V(0),y1:m.t,y2:H-m.b,class:'ax'},s);
+    o.cats.forEach((c,j)=>{
+      el('text',{x:m.l-8,y:m.t+band*j+band/2+3.5,'text-anchor':'end',class:'tk'},s).textContent=c;
+      o.series.forEach((q,i)=>{
+        const v=q.vals[j]; if(v===null||v===undefined) return;
+        const hh=Math.max(3,(band-10)/o.series.length), y=m.t+band*j+5+i*hh;
+        const x0=V(Math.min(0,v)), x1=V(Math.max(0,v));
+        const g=el('g',{},s);
+        el('rect',{x:x0,y:y,width:Math.max(1.5,x1-x0),height:hh-2,rx:2,
+          style:css({fill:q.color||COL[i%5],cursor:'pointer'})},g);
+        el('text',{x:x1+5,y:y+hh/2+2.5,class:'dl'},g).textContent=o.vFmt?o.vFmt(v):v;
+        g.addEventListener('mousemove',e=>showTip(e,`<b>${esc(c)}</b><br>${esc(q.name)}: ${o.vFmt?o.vFmt(v):v}`));
+        g.addEventListener('mouseleave',hideTip);
+      });
+    });
+  } else {
+    const V=v=>H-m.b-(v-r.lo)/(r.hi-r.lo)*(H-m.t-m.b), band=(W-m.l-m.r)/n;
+    ticks(r.lo,r.hi,r.step).forEach(v=>{
+      el('line',{x1:m.l,x2:W-m.r,y1:V(v),y2:V(v),class:'gl'},s);
+      el('text',{x:m.l-7,y:V(v)+3.5,'text-anchor':'end',class:'tk'},s).textContent=o.vFmt?o.vFmt(v):v;
+    });
+    el('line',{x1:m.l,x2:W-m.r,y1:V(0),y2:V(0),class:'ax'},s);
+    o.cats.forEach((c,j)=>{
+      const cx=m.l+band*j+band/2;
+      const t=el('text',{x:cx,y:H-m.b+15,'text-anchor':o.rot?'end':'middle',class:'tk'},s);
+      t.textContent=c; if(o.rot) t.setAttribute('transform',`rotate(-32 ${cx} ${H-m.b+15})`);
+      o.series.forEach((q,i)=>{
+        const v=q.vals[j]; if(v===null||v===undefined) return;
+        const bw=Math.min(34,(band-8)/o.series.length), x=m.l+band*j+(band-bw*o.series.length)/2+i*bw;
+        const y0=V(Math.max(0,v)), y1=V(Math.min(0,v));
+        const g=el('g',{},s);
+        el('rect',{x:x+1,y:y0,width:bw-2,height:Math.max(2,y1-y0),rx:2,
+          style:css({fill:q.color||COL[i%5],cursor:'pointer'})},g);
+        if (o.showVals) el('text',{x:x+bw/2,y:y0-4,'text-anchor':'middle',class:'dl'},g)
+          .textContent=o.vFmt?o.vFmt(v):v;
+        g.addEventListener('mousemove',e=>showTip(e,`<b>${esc(c)}</b><br>${esc(q.name)}: ${o.vFmt?o.vFmt(v):v}`));
+        g.addEventListener('mouseleave',hideTip);
+      });
+    });
+  }
+  if (o.vLabel) el('text',{x:(o.horizontal?(m.l+W-m.r)/2:m.l-38),y:(o.horizontal?H-3:m.t+2),
+    class:'al','text-anchor':o.horizontal?'middle':'end',
+    transform:o.horizontal?null:`rotate(-90 ${m.l-38} ${m.t+2})`},s).textContent=o.vLabel;
+}
+
+/* -------------------------------------------------------------------- tables */
+function table(host, cols, rows, opt={}){
+  const h = typeof host==='string'?document.getElementById(host):host;
+  const th = cols.map(c=>`<th data-k="${esc(c.k)}">${esc(c.t)}</th>`).join('');
+  const tr = rows.map(r=>'<tr>'+cols.map(c=>{
+      const v=c.f?c.f(r[c.k],r):r[c.k];
+      return `<td class="${c.text?'t':''}${c.best&&c.best(r)?' best':''}">${v===undefined||v===null?'—':esc(v)}</td>`;
+    }).join('')+'</tr>').join('');
+  h.innerHTML = `<div class="tblwrap"><table><thead><tr>${th}</tr></thead><tbody>${tr}</tbody></table></div>`;
+  if (opt.sortable){
+    h.querySelectorAll('th').forEach((thEl,i)=>thEl.addEventListener('click',()=>{
+      const k=cols[i].k, dir = h.dataset.sk===k && h.dataset.sd==='1' ? -1 : 1;
+      rows.sort((a,b)=>{const x=a[k],y=b[k];
+        return (typeof x==='number'&&typeof y==='number') ? (x-y)*dir : String(x??'').localeCompare(String(y??''))*dir;});
+      h.dataset.sk=k; h.dataset.sd=dir===1?'1':'0';
+      table(h, cols, rows, opt);
+    }));
+  }
+}
+</script>
+
+<script>
+/* ------------------------------------------------------------------- data cuts */
+const R = D.runs, FQ = D.faq, EX = D.extra, FIT = D.fit, KVA = D.kva;
+const q = (f) => R.filter(f);
+const one = (f) => R.find(f);
+const LBL = {
+  seasonal_naive:'Same hour last week', persistence:'Same hour yesterday',
+  ridge_local:'Ridge, per transformer', local:'Boosting, per transformer',
+  cluster:'Boosting, per group', global:'Boosting, whole fleet',
+  global_cluster:'Fleet model, group features', topdown_rolling:'Top down, rolling shares',
+  topdown_cluster:'Top down, group total', topdown_feeder:'Top down, feeder total',
+  lstm_global:'Fleet LSTM', global_cluster_q90:'Fleet model, 90th percentile',
+  local_q90:'Per transformer, 90th percentile'
+};
+const ORD = Object.keys(LBL);
+
+/* ---------------------------------------------------------------- 01 the fleet */
+const fleet = FQ.fleet;
+document.getElementById('tiles').innerHTML = [
+  ['Service transformers','4,134','rated 167 kVA or below'],
+  ['Load points','20,353','about 10,200 homes'],
+  ['Homes per transformer', fleet.homes_mean, `${pct(fleet.share_single_home,0)}% serve just one`],
+  ['Median nameplate', fleet.kva_median+' kVA','50 kVA urban, 25 kVA rural'],
+  ['Median annual peak', fmt(fleet.util_median,0)+'%','of nameplate rating'],
+  ['Past 80% of rating', pct(fleet.share_over_80,1)+'%','on the calibrated series'],
+  ['Past 100% of rating', pct(fleet.share_over_100,1)+'%','7.3% on a flat ratio'],
+  ['Controlled runs','144','all released with the paper'],
+].map(([k,v,n])=>`<div class="tile"><div class="k">${esc(k)}</div><div class="v">${esc(v)}</div><div class="n">${esc(n)}</div></div>`).join('');
+
+register(document.getElementById('c_homes'), ()=> barChart(document.getElementById('c_homes'), {
+  cats:['1','2','3 to 4','5 or more'], h:230, showVals:true,
+  series:[{name:'transformers', vals:[677,283,300,240], color:'var(--s1)'}],
+  vFmt:v=>v, vLabel:'Transformers in the 1,500 unit sample'
+}));
+
+const util = FQ ? null : null;
+register(document.getElementById('c_util'), ()=> barChart(document.getElementById('c_util'), {
+  cats:['under 40','40 to 60','60 to 80','80 to 100','over 100'], h:230, showVals:true, rot:false,
+  series:[{name:'share of fleet', vals:[9.5,28.1,42.4,17.6,2.4], color:'var(--s1)'}],
+  vFmt:v=>v+'%', vLabel:'Share of the fleet (%)'
+}));
+
+/* ------------------------------------------------------------- 02 loading series */
+const kvaBy = v => KVA.filter(r=>r.variant===v);
+register(document.getElementById('c_kva'), ()=> barChart(document.getElementById('c_kva'), {
+  cats:['Summed kW','Flat ratio','Calibrated map','Power flow truth'], h:240, showVals:true,
+  series:[
+    {name:'rural substation', color:'var(--s1)', vals:[
+      kvaBy('summed kW')[0].n_over_100, kvaBy('flat factor')[0].n_over_100,
+      kvaBy('fitted')[0].n_over_100, kvaBy('fitted')[0].n_over_100_true]},
+    {name:'urban substation', color:'var(--s2)', vals:[
+      kvaBy('summed kW')[1].n_over_100, kvaBy('flat factor')[1].n_over_100,
+      kvaBy('fitted')[1].n_over_100, kvaBy('fitted')[1].n_over_100_true]},
+  ],
+  vFmt:v=>v, vLabel:'Transformers flagged above nameplate'
+}));
+const lm = FQ.load_model_test;
+register(document.getElementById('c_ratio'), ()=> lineChart(document.getElementById('c_ratio'), {
+  h:240, xTicks:[1,2,3,4,5], xFmt:v=>['light','2nd','3rd','4th','heavy'][v-1],
+  xLabel:'Loading quintile of the hour', yLabel:'Measured kVA per kW',
+  xName:'quintile', yName:'kVA per kW', yFmt:v=>fmt(v,2),
+  series:['rural','urban'].map((r,i)=>({name:r+' substation', color:COL[i],
+    pts:Object.values(lm[r].ratio_by_loading).map((v,j)=>[j+1,v])}))
+}));
+table('t_kva',
+  [{k:'region',t:'substation',text:true},{k:'variant',t:'construction',text:true},
+   {k:'hourly_mape',t:'hourly error %',f:v=>fmt(v,2)},{k:'peak_bias_pct',t:'peak bias %',f:v=>fmt(v,2)},
+   {k:'n_over_100',t:'flagged > 100%'},{k:'n_over_100_true',t:'true > 100%'},
+   {k:'n_over_80',t:'flagged > 80%'},{k:'n_over_80_true',t:'true > 80%'},{k:'n',t:'units'}],
+  KVA);
+
+/* --------------------------------------------------------------- 03 strategies */
+let sFold='winter', sM='nmae_med';
+const MNAME={nmae_med:['Normalized MAE (%)','lower is better'],
+  peak_ape_med:['Error on the daily peak (%)','lower is better'],
+  peak_bias_med:['Signed error on the daily peak (%)','negative means the peak was missed low'],
+  ovl80_f1:['F1 on crossing 80% of nameplate','higher is better']};
+function drawStrategy(){
+  const host=document.getElementById('c_strategy');
+  const folds = sFold==='both'?['winter','summer']:[sFold];
+  const series = folds.map((f,i)=>({name: f==='winter'?'December':'July', color:COL[i],
+    vals: ORD.map(t=>{const r=one(x=>x.experiment==='main'&&x.fold===f&&x.tag===t);
+      if(!r) return null; const v=r[sM]; return sM==='ovl80_f1'? +fmt(v,3) : +fmt(100*v,1);})}));
+  barChart(host, {cats:ORD.map(t=>LBL[t]), horizontal:true, ml:168, series,
+    vFmt:v=>sM==='ovl80_f1'?fmt(v,2):fmt(v,1), vLabel:MNAME[sM][0]});
+  document.getElementById('cap_strategy').textContent =
+    MNAME[sM][0]+', fleet median over 500 transformers. '+MNAME[sM][1][0].toUpperCase()+MNAME[sM][1].slice(1)+'.';
+}
+function strategyTable(){
+  const rows = ORD.map(t=>{
+    const w=one(x=>x.experiment==='main'&&x.fold==='winter'&&x.tag===t)||{};
+    const s=one(x=>x.experiment==='main'&&x.fold==='summer'&&x.tag===t)||{};
+    return {name:LBL[t], nw:w.nmae_med, ns:s.nmae_med, iqr:w.nmae_iqr, pw:w.peak_ape_med,
+            bw:w.peak_bias_med, hw:w.peak_hour_err_med, f1:w.ovl80_f1, secs:w.secs};
+  });
+  const best=Math.min(...rows.map(r=>r.nw));
+  table('t_strategy',[
+    {k:'name',t:'strategy',text:true},
+    {k:'nw',t:'nMAE Dec %',f:v=>pct(v),best:r=>r.nw===best},
+    {k:'ns',t:'nMAE Jul %',f:v=>pct(v)},
+    {k:'iqr',t:'IQR Dec %',f:v=>pct(v)},
+    {k:'pw',t:'peak APE %',f:v=>pct(v)},
+    {k:'bw',t:'peak bias %',f:v=>(v>0?'+':'')+pct(v)},
+    {k:'hw',t:'peak hour err (h)',f:v=>fmt(v,2)},
+    {k:'f1',t:'F1 at 80%',f:v=>fmt(v,3)},
+    {k:'secs',t:'fit time (s)',f:v=>fmt(v,0)}], rows, {sortable:true});
+}
+document.querySelectorAll('#strategy [data-fold]').forEach(b=>b.addEventListener('click',()=>{
+  sFold=b.dataset.fold;
+  document.querySelectorAll('#strategy [data-fold]').forEach(x=>x.setAttribute('aria-pressed',x===b));
+  drawStrategy();
+}));
+document.querySelectorAll('#strategy [data-m]').forEach(b=>b.addEventListener('click',()=>{
+  sM=b.dataset.m;
+  document.querySelectorAll('#strategy [data-m]').forEach(x=>x.setAttribute('aria-pressed',x===b));
+  drawStrategy();
+}));
+register(document.getElementById('c_strategy'), drawStrategy); strategyTable();
+
+/* ----------------------------------------------------------------- 04 grouping */
+const GN={shape_kmeans:'k-means, week shape',daily_kmeans:'k-means, day shape',
+  feature_kmeans:'k-means, features',ward_corr:'Ward, correlation',dtw_kmedoids:'DTW k-medoids',
+  attribute:'attributes only \u2020',feeder:'same feeder \u2020'};
+const gr = q(x=>x.experiment==='grouping'&&x.strategy==='cluster');
+
+/* A dot plot, not seven line series. The whole claim is that the settings coincide, and
+   coincident lines produce spaghetti plus a legend sitting on top of the marks. */
+function dotRows(host, o){
+  host.innerHTML='';
+  const W=sizeOf(host, 420, 1040), n=o.rows.length;
+  const H=26+n*21+36, m={t:8,r:16,b:40,l:Math.min(132, Math.round(W*0.3))};
+  const s=mkSvg(W,H); s.style.width=W+'px'; s.style.maxWidth='none'; host.appendChild(s);
+  const vals=o.rows.flatMap(r=>r.vals);
+  const lo=Math.min(...vals), hi=Math.max(...vals), pad=(hi-lo)*0.12||0.1;
+  const X=v=>m.l+(v-lo+pad)/((hi-lo)+2*pad)*(W-m.l-m.r);
+  const band=(H-m.t-m.b)/n;
+  const step=o.step||0.1;
+  for(let v=Math.ceil(lo/step)*step; v<=hi+1e-9; v+=step){
+    el('line',{x1:X(v),x2:X(v),y1:m.t,y2:H-m.b,class:'gl'},s);
+    el('text',{x:X(v),y:H-m.b+15,'text-anchor':'middle',class:'tk'},s).textContent=o.fmt(v);
+  }
+  el('line',{x1:m.l,x2:W-m.r,y1:H-m.b,y2:H-m.b,class:'ax'},s);
+  o.rows.forEach((r,j)=>{
+    const y=m.t+band*j+band/2;
+    el('text',{x:m.l-8,y:y+3.5,'text-anchor':'end',class:'tk'},s).textContent=r.name;
+    el('line',{x1:X(lo),x2:X(hi),y1:y,y2:y,style:'stroke:var(--line);stroke-width:1'},s);
+    r.vals.forEach((v,i)=>{
+      const g=el('g',{},s);
+      el('circle',{cx:X(v),cy:y,r:4.2,style:css({fill:'var(--s1)',stroke:'var(--surface)','stroke-width':1.4})},g);
+      el('circle',{cx:X(v),cy:y,r:10,style:'fill:transparent;cursor:pointer'},g)
+        .addEventListener('mousemove',e=>showTip(e,
+          `<b>${esc(r.name)}</b><br>${o.label}: ${o.fmt(v)}${r.ks?'<br>groups: '+r.ks[i]:''}`));
+      g.addEventListener('mouseleave',hideTip);
+    });
+  });
+  if(o.xLabel) el('text',{x:(m.l+W-m.r)/2,y:H-6,'text-anchor':'middle',class:'al'},s).textContent=o.xLabel;
+}
+
+register(document.getElementById('c_group'), ()=> dotRows(document.getElementById('c_group'), {
+  rows: Object.keys(GN).map(kind=>{
+    const sub = gr.filter(r=>r.grouping===kind).sort((a,b)=>a.k-b.k);
+    return {name:GN[kind], vals:sub.map(r=>+pct(r.nmae_med,2)), ks:sub.map(r=>r.k)};
+  }).filter(r=>r.vals.length),
+  fmt:v=>fmt(v,1), step:0.2, label:'normalized MAE',
+  xLabel:'Normalized MAE (%) \u2014 \u2020 needs no meter data'
+}));
+table('t_group',[{k:'g',t:'grouping method',text:true},{k:'k',t:'groups'},
+  {k:'nmae_med',t:'nMAE %',f:v=>pct(v,2)},{k:'peak_ape_med',t:'peak APE %',f:v=>pct(v)},
+  {k:'nrmse_med',t:'nRMSE %',f:v=>pct(v)}],
+  gr.map(r=>({...r,g:GN[r.grouping]})).sort((a,b)=>a.nmae_med-b.nmae_med), {sortable:true});
+
+/* ----------------------------------------------------------------- 05 coverage */
+const CN={local_oracle:'its own meter history',cold_global:'fleet model, cold start',
+  cold_global_group:'fleet model with groups',topdown_attr:'top down, attribute groups',
+  topdown_shape:'top down, shape groups',class_profile:'borrowed profile, whole fleet',
+  donor_attr:'borrowed profile, attribute groups',donor_shape:'borrowed profile, shape groups'};
+const TIER={ami15:15,ami35:35,ami70:70};
+const cvRows = q(x=>x.experiment==='coverage');
+register(document.getElementById('c_cov'), ()=> lineChart(document.getElementById('c_cov'), {
+  h:280, xTicks:[15,35,70], xFmt:v=>v+'%', x0:10,
+  xLabel:'Share of the fleet carrying a meter (%)', yLabel:'Normalized MAE (%)',
+  xName:'coverage', yName:'nMAE', yFmt:v=>fmt(v,1), mr:18, y0:16, yMax:35,
+  series:['local_oracle','cold_global','topdown_attr','class_profile','donor_shape'].map((t,i)=>({
+    name:CN[t], color:COL[i],
+    pts:cvRows.filter(r=>r.tag===t).sort((a,b)=>TIER[a.tier]-TIER[b.tier])
+      .map(r=>[TIER[r.tier], +pct(r.nmae_med,2)])}))
+}));
+table('t_cov',[{k:'n',t:'method',text:true},{k:'ami15',t:'15% metered',f:v=>pct(v)},
+  {k:'ami35',t:'35% metered',f:v=>pct(v)},{k:'ami70',t:'70% metered',f:v=>pct(v)}],
+  Object.keys(CN).map(t=>{const o={n:CN[t]};
+    ['ami15','ami35','ami70'].forEach(k=>{const r=one(x=>x.experiment==='coverage'&&x.tier===k&&x.tag===t); o[k]=r&&r.nmae_med;});
+    return o;}), {sortable:true});
+</script>
+
+<script>
+/* ---------------------------------------------------------------- 06 screening */
+const EVL={ev0:0,ev15:15,ev30:30,ev50:50};
+const evRows=q(x=>x.experiment==='growth');
+register(document.getElementById('c_ev'), ()=> lineChart(document.getElementById('c_ev'), {
+  h:260, xTicks:[0,15,30,50], xFmt:v=>v+'%', x0:0, y0:0, yMax:0.6,
+  xLabel:'Share of homes with an electric vehicle', yLabel:'F1 on next-day overload',
+  xName:'adoption', yName:'F1', yFmt:v=>fmt(v,2),
+  series:[['global_cluster_q90','fleet model, 90th percentile'],['seasonal_naive','same hour last week'],
+          ['cluster','boosting per group'],['global_cluster','fleet model with groups']].map(([t,n],i)=>({
+    name:n, color:COL[i%5],
+    pts:evRows.filter(r=>r.tag===t).sort((a,b)=>EVL[a.tier]-EVL[b.tier])
+      .map(r=>[EVL[r.tier], +fmt(r.ovl100_f1,3), `${pct(r.share_over100)}% of fleet past nameplate`])}))
+}));
+const qr=q(x=>x.experiment==='quantile');
+register(document.getElementById('c_q'), ()=> lineChart(document.getElementById('c_q'), {
+  h:260, xLabel:'Normalized MAE (%)', yLabel:'F1 on next-day overload',
+  xName:'nMAE', yName:'F1', yFmt:v=>fmt(v,2), xFmt:v=>fmt(v,0), y0:0,
+  series:[['global_cluster','fleet model with groups'],['local','one model per transformer']].map(([t,n],i)=>({
+    name:n, color:COL[i%5],
+    pts:qr.filter(r=>r.tag===t).sort((a,b)=>a.alpha-b.alpha)
+      .map(r=>[+pct(r.nmae_med,1), +fmt(r.ovl100_f1,3),
+        `quantile ${r.alpha} · recall ${fmt(r.ovl100_rec,2)} · precision ${fmt(r.ovl100_prec,2)}`])}))
+}));
+register(document.getElementById('c_bias'), ()=> barChart(document.getElementById('c_bias'), {
+  horizontal:true, ml:168,
+  cats:ORD.map(t=>LBL[t]),
+  series:[{name:'signed peak error', color:'var(--s1)',
+    vals:ORD.map(t=>{const r=one(x=>x.experiment==='main'&&x.fold==='winter'&&x.tag===t);
+      return r? +pct(r.peak_bias_med,1):null;})}],
+  vFmt:v=>(v>0?'+':'')+fmt(v,1), vLabel:'Signed error on the daily peak (%)'
+}));
+table('t_ev',[{k:'t',t:'strategy',text:true},{k:'tier',t:'EV adoption',text:true},
+  {k:'share_over100',t:'fleet past nameplate %',f:v=>pct(v)},
+  {k:'nmae_med',t:'nMAE %',f:v=>pct(v)},{k:'ovl100_prec',t:'precision',f:v=>fmt(v,3)},
+  {k:'ovl100_rec',t:'recall',f:v=>fmt(v,3)},{k:'ovl100_f1',t:'F1',f:v=>fmt(v,3)}],
+  evRows.map(r=>({...r,t:LBL[r.tag]||r.tag,tier:r.tier.replace('ev','')+'%'})), {sortable:true});
+table('t_q',[{k:'t',t:'strategy',text:true},{k:'alpha',t:'training quantile',f:v=>fmt(v,2)},
+  {k:'nmae_med',t:'nMAE %',f:v=>pct(v)},{k:'peak_ape_med',t:'peak APE %',f:v=>pct(v)},
+  {k:'ovl100_prec',t:'precision',f:v=>fmt(v,3)},{k:'ovl100_rec',t:'recall',f:v=>fmt(v,3)},
+  {k:'ovl100_f1',t:'F1',f:v=>fmt(v,3)}],
+  qr.map(r=>({...r,t:LBL[r.tag]||r.tag})), {sortable:true});
+
+/* ------------------------------------------------------------- 07 data quality */
+const DT=[['clean_0.0','clean history'],['mcar_0.05','5% of readings missing'],
+  ['mcar_0.1','10% missing'],['mcar_0.2','20% missing'],['outage_0.2','outages over 20% of hours'],
+  ['frozen_0.2','stuck meter, 20% of hours'],['spike_0.01','spikes on 1% of readings'],
+  ['spike_0.05','spikes on 5% of readings']];
+const base={}; ['local','cluster','global'].forEach(t=>{
+  base[t]=one(x=>x.experiment==='dirty'&&x.tier==='clean_0.0'&&x.tag===t).nmae_med; });
+register(document.getElementById('c_dirty'), ()=> barChart(document.getElementById('c_dirty'), {
+  h:300, rot:true, cats:DT.slice(1).map(d=>d[1]),
+  series:[['local','one model per transformer'],['cluster','one model per group'],['global','one fleet model']]
+    .map(([t,n],i)=>({name:n, color:COL[i%5],
+      vals:DT.slice(1).map(([tier])=>{const r=one(x=>x.experiment==='dirty'&&x.tier===tier&&x.tag===t);
+        return r? +fmt(100*(r.nmae_med/base[t]-1),1):null;})})),
+  vFmt:v=>(v>0?'+':'')+fmt(v,0)+'%', vLabel:'Change in error against clean history'
+}));
+table('t_dirty',[{k:'n',t:'fault in the training history',text:true},
+  {k:'local',t:'per transformer %',f:v=>pct(v)},{k:'cluster',t:'per group %',f:v=>pct(v)},
+  {k:'global',t:'whole fleet %',f:v=>pct(v)},
+  {k:'dl',t:'per transformer change',f:v=>(v>0?'+':'')+fmt(v,1)+'%'},
+  {k:'dc',t:'per group change',f:v=>(v>0?'+':'')+fmt(v,1)+'%'}],
+  DT.map(([tier,n])=>{const o={n};
+    ['local','cluster','global'].forEach(t=>{const r=one(x=>x.experiment==='dirty'&&x.tier===tier&&x.tag===t); o[t]=r&&r.nmae_med;});
+    o.dl=100*(o.local/base.local-1); o.dc=100*(o.cluster/base.cluster-1); return o;}));
+
+/* ------------------------------------------------------- 08 solar and storage */
+const PVL={pv0_feat:0,pv20_nofeat:20,pv40_nofeat:40,pv80_nofeat:80};
+const pvr=q(x=>x.experiment==='solar'&&PVL[x.tier]!==undefined);
+register(document.getElementById('c_pv'), ()=> lineChart(document.getElementById('c_pv'), {
+  h:250, xTicks:[0,20,40,80], xFmt:v=>v+'%', x0:0, y0:0,
+  xLabel:'Share of homes with rooftop solar', yLabel:'Value',
+  xName:'adoption', yName:'value', yFmt:v=>fmt(v,1),
+  series:[
+   {name:'normalized MAE (%)', color:COL[0],
+    pts:pvr.filter(r=>r.tag==='cluster').sort((a,b)=>PVL[a.tier]-PVL[b.tier]).map(r=>[PVL[r.tier],+pct(r.nmae_med,1)])},
+   {name:'share past nameplate (%)', color:COL[1],
+    pts:pvr.filter(r=>r.tag==='cluster').sort((a,b)=>PVL[a.tier]-PVL[b.tier]).map(r=>[PVL[r.tier],+pct(r.share_over100,1)])}]
+}));
+const BL={bess0:0,bess30:30,bess60:60};
+const br=q(x=>x.experiment==='storage'&&x.tag==='cluster');
+register(document.getElementById('c_bess'), ()=> lineChart(document.getElementById('c_bess'), {
+  h:250, xTicks:[0,30,60], xFmt:v=>v+'%', x0:0, y0:0,
+  xLabel:'Share of homes with a battery', yLabel:'Value',
+  xName:'adoption', yName:'value', yFmt:v=>fmt(v,1),
+  series:[
+   {name:'normalized MAE (%)', color:COL[0], pts:br.sort((a,b)=>BL[a.tier]-BL[b.tier]).map(r=>[BL[r.tier],+pct(r.nmae_med,1)])},
+   {name:'error on the daily peak (%)', color:COL[2], pts:br.map(r=>[BL[r.tier],+pct(r.peak_ape_med,1)])},
+   {name:'share past nameplate (%)', color:COL[1], pts:br.map(r=>[BL[r.tier],+pct(r.share_over100,1)])},
+   {name:'screening F1 × 10', color:COL[3], pts:br.map(r=>[BL[r.tier],+fmt(10*r.ovl100_f1,2)])}]
+}));
+
+/* ------------------------------------------------------- 09 seasons and weather */
+const SEA=[['winter','winter'],['spring','spring'],['summer','summer'],['fall','fall']];
+register(document.getElementById('c_shape'), ()=> lineChart(document.getElementById('c_shape'), {
+  h:250, xTicks:[0,4,8,12,16,20,23], xFmt:v=>String(v).padStart(2,'0')+':00', x0:0,
+  xLabel:'Hour of the day', yLabel:'Load, multiple of the annual mean',
+  xName:'hour', yName:'load', yFmt:v=>fmt(v,2), y0:0.4,
+  series:SEA.map(([k,n],i)=>({name:n, color:COL[i%5],
+    pts:FQ.seasonal_shape[k].weekday.map((v,h)=>[h,+fmt(v,3)])}))
+}));
+register(document.getElementById('c_temp'), ()=> barChart(document.getElementById('c_temp'), {
+  h:250, rot:true, showVals:true,
+  cats:FQ.temp_response.map(r=>r.tb.replace('C',' °C')),
+  series:[{name:'mean load', color:'var(--s1)', vals:FQ.temp_response.map(r=>r.mean_norm_load)}],
+  vFmt:v=>fmt(v,2), vLabel:'Load, multiple of the annual mean'
+}));
+const MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+register(document.getElementById('c_pm'), ()=> barChart(document.getElementById('c_pm'), {
+  h:230, showVals:true, cats:MON,
+  series:[{name:'share of the fleet', color:'var(--s1)',
+    vals:MON.map((m,i)=>+pct(FQ.peak_month_share[String(i+1)]||0,1))}],
+  vFmt:v=>fmt(v,1)+'%', vLabel:'Share of transformers peaking in this month (%)'
+}));
+
+/* ---------------------------------------------------------- 10 where it works */
+let wSplit='homes', wFold='winter';
+const SPN={homes:['Homes behind the transformer','Aggregation is the single most useful thing a transformer can have.'],
+  volatility:['Quartile of day-to-day swing in the daily peak','This is where a short-term rental or an irregularly occupied property would land.'],
+  nameplate:['Nameplate rating (kVA)','Larger units carry more customers, so the two effects run together.'],
+  res_share:['Share of the load that is residential','Small commercial services repeat weekly, which is why they are so much easier.']};
+function drawStrat(){
+  const t=FQ.stratified[wFold][wSplit];
+  barChart(document.getElementById('c_strat'), {
+    h:270, rot:true, cats:t.map(r=>String(r.bucket)+` (n=${r.n})`),
+    series:[{name:'normalized MAE', color:COL[0], vals:t.map(r=>+pct(r.nmae_med,1))},
+            {name:'error on the daily peak', color:COL[1], vals:t.map(r=>+pct(r.peak_ape_med,1))}],
+    vFmt:v=>fmt(v,1)+'%', vLabel:'Error (%)'
+  });
+  const c=FQ.stratified[wFold].corr;
+  document.getElementById('cap_strat').textContent =
+    SPN[wSplit][0]+'. '+SPN[wSplit][1]+' Across the whole fleet, error correlates '+fmt(c.load_factor,2)+
+    ' with load factor, '+fmt(c.n_cust,2)+' with customer count and '+fmt(c.cv_daily_peak,2)+
+    ' with day-to-day swing.';
+}
+document.querySelectorAll('#where [data-sp]').forEach(b=>b.addEventListener('click',()=>{
+  wSplit=b.dataset.sp;
+  document.querySelectorAll('#where [data-sp]').forEach(x=>x.setAttribute('aria-pressed',x===b));
+  drawStrat();}));
+document.querySelectorAll('#where [data-wf]').forEach(b=>b.addEventListener('click',()=>{
+  wFold=b.dataset.wf;
+  document.querySelectorAll('#where [data-wf]').forEach(x=>x.setAttribute('aria-pressed',x===b));
+  drawStrat();}));
+register(document.getElementById('c_strat'), drawStrat);
+
+/* ------------------------------------------------------------------ 11 all runs */
+const EXPN={main:'strategy comparison',grouping:'grouping sweep',coverage:'meter coverage',
+  dirty:'data quality',growth:'electric vehicle growth',quantile:'quantile sweep',
+  solar:'rooftop solar',storage:'home batteries'};
+const sel=document.getElementById('f_exp');
+[...new Set(R.map(r=>r.experiment))].sort().forEach(e=>{
+  const o=document.createElement('option'); o.value=e; o.textContent=EXPN[e]||e; sel.appendChild(o);});
+const ALLCOLS=[{k:'experiment',t:'experiment',text:true,f:v=>EXPN[v]||v},{k:'fold',t:'fold',text:true},
+  {k:'name',t:'strategy',text:true},{k:'tier',t:'tier',text:true},{k:'grouping',t:'grouping',text:true},
+  {k:'k',t:'groups'},{k:'n_xfmr',t:'units'},{k:'nmae_med',t:'nMAE %',f:v=>pct(v,2)},
+  {k:'nmae_iqr',t:'IQR %',f:v=>pct(v)},{k:'peak_ape_med',t:'peak APE %',f:v=>pct(v)},
+  {k:'peak_bias_med',t:'peak bias %',f:v=>(v>0?'+':'')+pct(v)},
+  {k:'ovl100_f1',t:'F1 @100%',f:v=>fmt(v,3)},{k:'ovl80_f1',t:'F1 @80%',f:v=>fmt(v,3)},
+  {k:'secs',t:'seconds',f:v=>fmt(v,0)}];
+const ALL=R.map(r=>({...r,name:LBL[r.tag]||r.tag||r.strategy}));
+function drawAll(){
+  const e=sel.value, qq=document.getElementById('f_q').value.trim().toLowerCase();
+  const rows=ALL.filter(r=>(!e||r.experiment===e) &&
+    (!qq || [r.name,r.tier,r.grouping,r.experiment].join(' ').toLowerCase().includes(qq)));
+  table('t_all', ALLCOLS, rows, {sortable:true});
+  document.getElementById('f_n').textContent = rows.length+' of '+ALL.length+' runs';
+}
+sel.addEventListener('change',drawAll);
+document.getElementById('f_q').addEventListener('input',drawAll);
+drawAll();
+
+/* ------------------------------------------------------------------- nav state */
+const links=[...document.querySelectorAll('nav.rail a')];
+const obs=new IntersectionObserver(es=>{
+  es.forEach(x=>{ if(x.isIntersecting){
+    links.forEach(a=>a.classList.toggle('on', a.getAttribute('href')==='#'+x.target.id)); }});
+},{rootMargin:'-20% 0px -70% 0px'});
+document.querySelectorAll('main section').forEach(s=>obs.observe(s));
+</script>

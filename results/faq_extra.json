@@ -1,0 +1,54 @@
+{
+ "daily_register": {
+  "fleet_load_factor": 0.5802,
+  "peak_ape_median": 0.1318,
+  "peak_ape_p90": 0.3616
+ },
+ "daily_register_known_lf": {
+  "peak_ape_median": 0.0949,
+  "peak_ape_p90": 0.3035
+ },
+ "daily_register_screen": {
+  "precision": 0.718,
+  "recall": 0.366,
+  "f1": 0.485,
+  "events": 153
+ },
+ "winter_peak_hour": 19,
+ "winter_peak_level": 1.259,
+ "winter_min_level": 0.634,
+ "winter_peak_to_trough": 1.99,
+ "summer_peak_hour": 16,
+ "summer_peak_level": 1.727,
+ "summer_min_level": 0.649,
+ "summer_peak_to_trough": 2.66,
+ "share_peak_summer": 0.7127,
+ "share_peak_winter": 0.2667,
+ "coincidence": [
+  {
+   "homes": "1",
+   "n": 677,
+   "cv_daily_peak": 0.3642
+  },
+  {
+   "homes": "2",
+   "n": 283,
+   "cv_daily_peak": 0.3214
+  },
+  {
+   "homes": "3-4",
+   "n": 300,
+   "cv_daily_peak": 0.276
+  },
+  {
+   "homes": "5-8",
+   "n": 211,
+   "cv_daily_peak": 0.2628
+  },
+  {
+   "homes": "9-99",
+   "n": 29,
+   "cv_daily_peak": 0.279
+  }
+ ]
+}

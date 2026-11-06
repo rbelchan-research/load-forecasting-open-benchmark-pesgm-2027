@@ -1,0 +1,7 @@
+region,variant,hourly_mape,peak_bias_pct,n_over_100,n_over_80,n_over_100_true,n_over_80_true,n
+rural,fitted,3.94,0.41,3,44,3,43,189
+rural,flat factor,5.3,10.45,23,68,3,43,189
+rural,summed kW,13.96,-5.49,0,39,3,43,189
+urban,fitted,2.81,1.61,5,38,5,32,210
+urban,flat factor,4.22,7.58,7,57,5,32,210
+urban,summed kW,12.22,-6.03,3,23,5,32,210
